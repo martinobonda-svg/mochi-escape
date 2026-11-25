@@ -6,7 +6,7 @@ on:
       - '.github/workflows/android.yml'
       - 'index.html'
 permissions:
-  contents: read
+  contents: write
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -24,13 +24,26 @@ jobs:
           "$SDK/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
           BT="$SDK/build-tools/35.0.0"
           JAR="$SDK/platforms/android-35/android.jar"
-          mkdir -p build/assets build/classes build/dex
+          mkdir -p build/assets build/classes build/dex build/res/drawable
           cp index.html build/assets/index.html
+          cat > build/res/drawable/app_icon.xml <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+          <path android:fillColor="#86BE76" android:pathData="M0,0H108V108H0Z"/>
+          <path android:fillColor="#CDE7A5" android:pathData="M0,80Q22,60 54,77T108,72V108H0Z"/>
+          <path android:fillColor="#EDC66C" android:strokeColor="#58734A" android:strokeWidth="3" android:pathData="M75,88V49Q86,35 97,49V88Z"/>
+          <path android:fillColor="#88E65E" android:pathData="M80,83V52Q86,44 92,52V83Z"/>
+          <path android:fillColor="#FFF4DC" android:strokeColor="#493D38" android:strokeWidth="3.5" android:strokeLineJoin="round" android:pathData="M29,44Q16,13 29,12Q39,9 42,42L49,42Q52,9 65,12Q76,16 62,46Q79,53 77,73Q75,91 46,91Q16,91 15,72Q13,54 29,44Z"/>
+          <path android:strokeColor="#F2ABAD" android:strokeWidth="5" android:strokeLineCap="round" android:pathData="M29,22L34,37M65,22L59,37"/>
+          <path android:fillColor="#493D38" android:pathData="M31,59a4,5 0,1 0,8 0a4,5 0,1 0,-8 0M54,59a4,5 0,1 0,8 0a4,5 0,1 0,-8 0"/>
+          <path android:strokeColor="#493D38" android:strokeWidth="2.5" android:strokeLineCap="round" android:pathData="M41,70Q46,75 51,70"/>
+          <path android:fillColor="#F2ADAB" android:pathData="M22,69a6,3 0,1 0,12 0a6,3 0,1 0,-12 0M59,69a6,3 0,1 0,12 0a6,3 0,1 0,-12 0"/>
+          </vector>
+          EOF
           cat > build/AndroidManifest.xml <<'EOF'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.mochiescape.puzzle" android:versionCode="1" android:versionName="0.1-alpha.1">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.mochiescape.puzzle" android:versionCode="2" android:versionName="0.1-alpha.2">
             <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="35"/>
             <uses-permission android:name="android.permission.VIBRATE"/>
-            <application android:label="MOCHI ESCAPE" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false">
+            <application android:label="MOCHI ESCAPE" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:icon="@drawable/app_icon" android:roundIcon="@drawable/app_icon">
               <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
                 <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
               </activity>
@@ -65,13 +78,19 @@ jobs:
           EOF
           javac -source 8 -target 8 -classpath "$JAR" -d build/classes build/MainActivity.java
           "$BT/d8" --lib "$JAR" --min-api 23 --output build/dex build/classes/com/mochiescape/puzzle/MainActivity.class
-          "$BT/aapt2" link -I "$JAR" --manifest build/AndroidManifest.xml -A build/assets -o build/unsigned.apk
+          "$BT/aapt2" compile --dir build/res -o build/resources.zip
+          "$BT/aapt2" link -I "$JAR" --manifest build/AndroidManifest.xml -A build/assets -o build/unsigned.apk build/resources.zip
           (cd build/dex && zip -j ../unsigned.apk classes.dex)
           "$BT/zipalign" -f -p 4 build/unsigned.apk build/aligned.apk
           keytool -genkeypair -keystore build/debug.jks -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Mochi Escape Debug"
-          "$BT/apksigner" sign --ks build/debug.jks --ks-pass pass:android --key-pass pass:android --out build/MOCHI-ESCAPE-v0.1-alpha1.apk build/aligned.apk
-          "$BT/apksigner" verify --verbose build/MOCHI-ESCAPE-v0.1-alpha1.apk
+          "$BT/apksigner" sign --ks build/debug.jks --ks-pass pass:android --key-pass pass:android --out build/MOCHI-ESCAPE-v0.1-alpha2.apk build/aligned.apk
+          "$BT/apksigner" verify --verbose build/MOCHI-ESCAPE-v0.1-alpha2.apk
       - uses: actions/upload-artifact@v4
         with:
           name: MOCHI-ESCAPE-Android-v0.1
-          path: build/MOCHI-ESCAPE-v0.1-alpha1.apk
+          path: build/MOCHI-ESCAPE-v0.1-alpha2.apk
+      - name: Publish direct APK for testing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "android-0.1-alpha.2-${{ github.run_id }}" "build/MOCHI-ESCAPE-v0.1-alpha2.apk" --title "MOCHI-ESCAPE 0.1-alpha.2 Android test" --notes "Prototype with custom launcher icon. Not a production-signed build." --prerelease
