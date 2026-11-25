@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'index.html'
+      - 'art/**'
 permissions:
   contents: write
 jobs:
@@ -30,22 +31,18 @@ jobs:
           BT="$SDK/build-tools/35.0.0"
           JAR="$SDK/platforms/android-35/android.jar"
           mkdir -p build/assets build/classes build/dex build/res/drawable
-          cp index.html build/assets/index.html
-          cat > build/res/drawable/app_icon.xml <<'EOF'
-          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-          <path android:fillColor="#86BE76" android:pathData="M0,0H108V108H0Z"/>
-          <path android:fillColor="#CDE7A5" android:pathData="M0,80Q22,60 54,77T108,72V108H0Z"/>
-          <path android:fillColor="#EDC66C" android:strokeColor="#58734A" android:strokeWidth="3" android:pathData="M75,88V49Q86,35 97,49V88Z"/>
-          <path android:fillColor="#88E65E" android:pathData="M80,83V52Q86,44 92,52V83Z"/>
-          <path android:fillColor="#FFF4DC" android:strokeColor="#493D38" android:strokeWidth="3.5" android:strokeLineJoin="round" android:pathData="M29,44Q16,13 29,12Q39,9 42,42L49,42Q52,9 65,12Q76,16 62,46Q79,53 77,73Q75,91 46,91Q16,91 15,72Q13,54 29,44Z"/>
-          <path android:strokeColor="#F2ABAD" android:strokeWidth="5" android:strokeLineCap="round" android:pathData="M29,22L34,37M65,22L59,37"/>
-          <path android:fillColor="#493D38" android:pathData="M31,59a4,5 0,1 0,8 0a4,5 0,1 0,-8 0M54,59a4,5 0,1 0,8 0a4,5 0,1 0,-8 0"/>
-          <path android:strokeColor="#493D38" android:strokeWidth="2.5" android:strokeLineCap="round" android:pathData="M41,70Q46,75 51,70"/>
-          <path android:fillColor="#F2ADAB" android:pathData="M22,69a6,3 0,1 0,12 0a6,3 0,1 0,-12 0M59,69a6,3 0,1 0,12 0a6,3 0,1 0,-12 0"/>
-          </vector>
-          EOF
+          python3 - <<'PY'
+          import base64, json, pathlib
+          src = pathlib.Path('index.html').read_text()
+          art = json.loads(pathlib.Path('art/sprites.json').read_text())
+          assert '/*__ART_BUNDLE__*/{}' in src
+          src = src.replace('/*__ART_BUNDLE__*/{}',json.dumps(art,separators=(',',':')),1)
+          pathlib.Path('build/assets/index.html').write_text(src)
+          pathlib.Path('build/res/drawable-nodpi').mkdir(parents=True,exist_ok=True)
+          pathlib.Path('build/res/drawable-nodpi/app_icon.png').write_bytes(base64.b64decode(json.loads(pathlib.Path('art/launcher.json').read_text())['png'],validate=True))
+          PY
           cat > build/AndroidManifest.xml <<'EOF'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.mochiescape.puzzle" android:versionCode="3" android:versionName="0.1-alpha.3">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.mochiescape.puzzle" android:versionCode="4" android:versionName="0.2-alpha.1">
             <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="35"/>
             <uses-permission android:name="android.permission.VIBRATE"/>
             <application android:label="MOCHI ESCAPE" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:icon="@drawable/app_icon" android:roundIcon="@drawable/app_icon">
@@ -98,16 +95,16 @@ jobs:
           export KS_PASS="$(python3 -c 'import json, os; print(json.loads(os.environ["SIGNING_CONFIG"])["password"])')"
           echo "::add-mask::$KS_PASS"
           unset SIGNING_CONFIG
-          "$BT/apksigner" sign --ks build/signing.p12 --ks-key-alias game-release --ks-pass env:KS_PASS --key-pass env:KS_PASS --out build/MOCHI-ESCAPE-v0.1-alpha3.apk build/aligned.apk
+          "$BT/apksigner" sign --ks build/signing.p12 --ks-key-alias game-release --ks-pass env:KS_PASS --key-pass env:KS_PASS --out build/MOCHI-ESCAPE-v0.2-alpha1.apk build/aligned.apk
           unset KS_PASS
-          "$BT/apksigner" verify --verbose --print-certs build/MOCHI-ESCAPE-v0.1-alpha3.apk | tee build/cert-check.txt
+          "$BT/apksigner" verify --verbose --print-certs build/MOCHI-ESCAPE-v0.2-alpha1.apk | tee build/cert-check.txt
           grep -Fqi 'certificate SHA-256 digest: 1664981479dbabd55fd7801fc1251d4c17d09eee20dd32176896f3910b7016a7' build/cert-check.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: MOCHI-ESCAPE-Android-v0.1
-          path: build/MOCHI-ESCAPE-v0.1-alpha3.apk
+          name: MOCHI-ESCAPE-Android-v0.2
+          path: build/MOCHI-ESCAPE-v0.2-alpha1.apk
       - name: Publish direct APK for testing
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "android-0.1-alpha.3-${{ github.run_id }}" "build/MOCHI-ESCAPE-v0.1-alpha3.apk" --title "MOCHI-ESCAPE 0.1-alpha.3 Android test" --notes "Test version signed with the dedicated persistent game key; not a Google Play release." --prerelease
+          gh release create "android-0.2-alpha.1-${{ github.run_id }}" "build/MOCHI-ESCAPE-v0.2-alpha1.apk" --title "MOCHI-ESCAPE 0.2-alpha.1 Android test" --notes "Illustrated visual update. Persistent signing certificate checked. Not a Google Play release." --prerelease
