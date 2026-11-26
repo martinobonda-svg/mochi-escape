@@ -106,7 +106,7 @@ jobs:
           name: MOCHI-ESCAPE-Android-VV-1.0.6
           path: build/MOCHI-ESCAPE-VV-1.0.6.apk
       - name: Publish direct APK for testing
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/codex/mobile-download-1.0.6'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
