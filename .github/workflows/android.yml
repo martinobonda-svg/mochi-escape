@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - '.github/workflows/android.yml'
       - 'index.html'
       - 'art/**'
 permissions:
@@ -42,7 +43,7 @@ jobs:
           pathlib.Path('build/res/drawable-nodpi/app_icon.png').write_bytes(base64.b64decode(json.loads(pathlib.Path('art/launcher.json').read_text())['png'],validate=True))
           PY
           cat > build/AndroidManifest.xml <<'EOF'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.mochiescape.puzzle" android:versionCode="9" android:versionName="1.0.4">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.mochiescape.puzzle" android:versionCode="10" android:versionName="1.0.5">
             <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="35"/>
             <uses-permission android:name="android.permission.VIBRATE"/>
             <application android:label="MOCHI ESCAPE" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:icon="@drawable/app_icon" android:roundIcon="@drawable/app_icon">
@@ -96,16 +97,16 @@ jobs:
           export KS_PASS="$(python3 -c 'import json, os; print(json.loads(os.environ["SIGNING_CONFIG"])["password"])')"
           echo "::add-mask::$KS_PASS"
           unset SIGNING_CONFIG
-          "$BT/apksigner" sign --ks build/signing.p12 --ks-key-alias game-release --ks-pass env:KS_PASS --key-pass env:KS_PASS --out build/MOCHI-ESCAPE-VV-1.0.4.apk build/aligned.apk
+          "$BT/apksigner" sign --ks build/signing.p12 --ks-key-alias game-release --ks-pass env:KS_PASS --key-pass env:KS_PASS --out build/MOCHI-ESCAPE-VV-1.0.5.apk build/aligned.apk
           unset KS_PASS
-          "$BT/apksigner" verify --verbose --print-certs build/MOCHI-ESCAPE-VV-1.0.4.apk | tee build/cert-check.txt
+          "$BT/apksigner" verify --verbose --print-certs build/MOCHI-ESCAPE-VV-1.0.5.apk | tee build/cert-check.txt
           grep -Fqi 'certificate SHA-256 digest: 1664981479dbabd55fd7801fc1251d4c17d09eee20dd32176896f3910b7016a7' build/cert-check.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: MOCHI-ESCAPE-Android-VV-1.0.4
-          path: build/MOCHI-ESCAPE-VV-1.0.4.apk
+          name: MOCHI-ESCAPE-Android-VV-1.0.5
+          path: build/MOCHI-ESCAPE-VV-1.0.5.apk
       - name: Publish direct APK for testing
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "android-1.0.4-${{ github.run_id }}" "build/MOCHI-ESCAPE-VV-1.0.4.apk" --title "MOCHI-ESCAPE 1.0.4 Android test" --notes "Illustrated visual update. Persistent signing certificate checked. Not a Google Play release." --prerelease
+          gh release create "android-1.0.5-${{ github.run_id }}" "build/MOCHI-ESCAPE-VV-1.0.5.apk" --title "MOCHI-ESCAPE 1.0.5 Android test" --notes "Illustrated visual update. Persistent signing certificate checked. Not a Google Play release." --prerelease
