@@ -1,7 +1,9 @@
 'use strict';
 const $=id=>document.getElementById(id);
-const colors=['','blue','yellow','purple','pink','green'];
-const tile=n=>'url(assets/'+colors[n]+'.webp)';
+function paintTile(el,n){
+ const palettes=[['#4e93bb','#dcb451','#9480b4','#d58da0','#86aa64'],['#74a6c3','#a4bccc','#90a4c3','#a4b4ce','#79abb7'],['#8678b8','#aa87b9','#776bab','#948ac2','#ad8cae']];
+ el.style.setProperty('--pigment',n===6?'#818391':palettes[Math.floor(index/5)][n-1]);el.dataset.symbol=n===6?'◆':['♦','★','☾','✿','❧'][n-1];
+}
 const cells=[],buttons=[],sprites=new Map();
 const hero=document.createElement('img');hero.id='pip';hero.alt='Pip';
 for(let angle=0;angle<5;angle++)for(let pose=0;pose<4;pose++){
@@ -30,6 +32,7 @@ if(current){data=JSON.parse(current)}else{
   }
 }complete=Math.max(0,Math.min(15,parseInt(data.complete)||0));owned=coats.filter(c=>!c.price||data.owned?.includes(c.id)).map(c=>c.id);look=owned.includes(data.look)?data.look:'classic';if(friends[data.friend]?.at<=complete)equipped=data.friend}catch{}
 function save(){try{localStorage.setItem(saveKey,JSON.stringify({complete,friend:equipped,owned,look}))}catch{}}
+let journeyFrom=null;
 let index=0,bonus=0,powerUsed=false,guestPosition=null;
 const guest=document.createElement('img');guest.className='friend';guest.hidden=true;
 function level(){return Radura.level}
@@ -60,7 +63,7 @@ function choose(i){
 function buildPieces(){buttons.length=0;$('pieces').replaceChildren();for(const [i,shape] of level().shapes.entries()){
   const button=document.createElement('button'),pattern=document.createElement('span');
   button.className='piece';button.setAttribute('aria-label','Pezzo '+(i+1));pattern.className='shape';
-  shape.forEach(([x,y])=>{const u=document.createElement('i');u.className='unit';u.style.gridArea=(y+1)+' / '+(x+1);u.style.backgroundImage=tile([1,2,4][i]);pattern.append(u)});
+  shape.forEach(([x,y])=>{const u=document.createElement('i');u.className='unit';u.style.gridArea=(y+1)+' / '+(x+1);paintTile(u,[1,2,4][i]);pattern.append(u)});
   button.append(pattern);button.style.touchAction='none';button.onclick=()=>choose(i);
   button.onpointerdown=e=>{
     if(drag||phase!=='ready'||spent.has(i)||breaking)return;
@@ -100,8 +103,8 @@ function render(){
     const visual=[index,board[i],i===level().exit].join('/');
     cell.classList.remove('suggest','route','preview');
     if(cell.dataset.visual===visual)return;
-    cell.dataset.visual=visual;cell.className='cell';delete cell.dataset.tile;cell.style.backgroundImage='';
-    if(board[i]){cell.dataset.tile=board[i];cell.style.backgroundImage=board[i]===6?'url(assets/rockTile.webp)':index>=10?'url(assets/starTile.webp)':index>=5?'url(assets/iceTile.webp)':tile(board[i])}
+    cell.dataset.visual=visual;cell.className='cell';delete cell.dataset.tile;delete cell.dataset.symbol;
+    if(board[i]){cell.dataset.tile=board[i];paintTile(cell,board[i])}
     if(i===level().exit)cell.classList.add('gate');
     cell.setAttribute('aria-label','Riga '+(Math.floor(i/6)+1)+', colonna '+(i%6+1)+', '+(board[i]?'occupata':i===level().exit?'portale':i===level().start?'Pip':i===level().friendCell?friends[level().friend].name:'libera'));
   });
@@ -131,7 +134,7 @@ async function play(i){
   if(!result){$('message').textContent='Qui il pezzo non entra.';return}
   const serial=sequence;phase='moving';$('leave').disabled=true;lastMove={board:board.slice(),chosen,spent:new Set(spent),moves};spent.add(chosen);moves++;
   if(spent.size===3)spent.clear();
-  for(const k of Radura.fit(board,chosen,i)){delete cells[k].dataset.visual;cells[k].dataset.tile=1;cells[k].style.backgroundImage=index>=10?'url(assets/starTile.webp)':index>=5?'url(assets/iceTile.webp)':tile([1,2,4][chosen])}
+  for(const k of Radura.fit(board,chosen,i)){delete cells[k].dataset.visual;cells[k].dataset.tile=1;paintTile(cells[k],[1,2,4][chosen])}
   board=result.next;
   for(const k of result.clear){cells[k].animate([{opacity:1},{opacity:.1}],{duration:180})}
   if(result.clear.size)await pause(160);if(sequence!==serial)return;
@@ -142,7 +145,7 @@ async function resolveMove(serial){
   const route=Radura.path(board);
   if(!route.length){
     if(moves>=6+bonus||!buttons.some((_,j)=>!spent.has(j)&&board.some((_,k)=>Radura.fit(board,j,k)))){
-      phase='lost';$('leave').disabled=false;$('again').textContent='Riprova';$('pieces').hidden=true;$('again').hidden=false;$('hint').hidden=true;$('restart').hidden=true;$('message').textContent='La strada è ancora chiusa.';
+      phase='lost';$('leave').disabled=false;$('again').textContent='Riprova';$('pieces').hidden=true;$('again').hidden=false;$('hint').hidden=true;$('restart').hidden=true;$('message').textContent='La strada è ancora chiusa.';dialog('Sentiero chiuso');$('panelBody').textContent=moves>=6+bonus?'Hai esaurito le mosse.':'Nessun pezzo disponibile entra nel tavoliere.';action('Al viaggio',()=>{closePanel();home()});action('Riprova',()=>{closePanel();reset()});
     }else{phase='ready';render();$('message').textContent=''}
     return;
   }
@@ -152,17 +155,24 @@ async function resolveMove(serial){
   for(const next of route.slice(1)){
     if(together)placeGuest(position);if(next===level().friendCell)together=true;
     const d=next-position,target=d===1?2:d===-1?6:d===-6?4:0;
+    while(facing!==target){
+      const delta=(target-facing+12)%8-4;facing=(facing+Math.sign(delta)+8)%8;
+      orient(Math.min(facing,8-facing),0,facing>4);await pause(75);if(sequence!==serial)return;
+    }
     cells[next].classList.add('route');stand(next);
     for(let frame=0;frame<4;frame++){
-      const delta=(target-facing+12)%8-4;facing=(facing+Math.sign(delta)+8)%8;
       orient(Math.min(facing,8-facing),frame,facing>4);await pause(65);if(sequence!==serial)return;
     }
   }
   hero.classList.add('enterPortal');
   if(together){placeGuest(level().exit);await pause(250);if(sequence!==serial)return;guest.classList.add('enterPortal')}
   await pause(350);if(sequence!==serial)return;
-  complete=Math.max(complete,index+1);save();
-  phase='ended';render();$('again').textContent='Torna al viaggio';orient(1,0);$('message').textContent=level().friend?friends[level().friend].name+' è nella collezione!':'Pip ha raggiunto il portale!';$('pieces').hidden=true;$('again').hidden=false;$('restart').hidden=true;
+  const earned=complete===index;if(earned)journeyFrom=index;complete=Math.max(complete,index+1);save();
+  phase='ended';render();$('again').textContent='Torna al viaggio';$('message').textContent=level().friend?friends[level().friend].name+' è nella collezione!':'Pip ha raggiunto il portale!';$('pieces').hidden=true;$('again').hidden=false;$('restart').hidden=true;
+  dialog(index===14?'Il viaggio è completo!':level().friend?friends[level().friend].name+' è al sicuro!':'Portale raggiunto!');
+  const portrait=new Image();portrait.src=level().friend?'assets/'+level().friend+'.webp':outfitFrame(1,0);portrait.alt='';
+  const recap=document.createElement('p');recap.textContent='Percorso aperto in '+moves+(moves===1?' mossa.':' mosse.')+(earned?' Hai raccolto una gemma.':'');$('panelBody').append(portrait,recap);
+  action('Al viaggio',()=>{closePanel();home()});if(index<14)action('Livello '+(index+2),()=>{closePanel();enter(index+1)});
 }
 
 function placeGuest(i){
@@ -192,9 +202,8 @@ $('hint').onclick=()=>{
 };
 function enter(i){
   if(i>complete||!Radura.levels[i])return;
-  index=i;document.body.dataset.look=look;$('stage').dataset.biome=i<5?'forest':i<10?'snow':'stars';Radura.select(i);$('home').hidden=true;$('stage').hidden=false;buildPieces();reset();
+  index=i;document.body.dataset.look=look;$('stage').dataset.biome=i<5?'forest':i<10?'snow':'stars';Radura.select(i);$('home').hidden=true;$('stage').hidden=false;Voyage.stage();buildPieces();reset();
 }
-const anchors=[[30,94.9],[57,82.2],[78,75.9],[46,66.8],[57,53.4],[38,42.4],[62,36.8],[54,32.5],[33,29.25],[41,26.45],[49,19.65],[42.5,17.6],[55,14.85],[68,12.7],[56,10.6]];
 function home(){
   sequence++;phase='home';endDrag();$('stage').hidden=true;$('home').hidden=false;tab('home');
 }
@@ -212,18 +221,18 @@ function tab(name){
   $('trail').replaceChildren();const current=Math.min(14,complete);
   Radura.levels.forEach((l,i)=>{
     const btn=document.createElement('button');btn.className='stop';btn.textContent=i+1;btn.disabled=i>complete;
-    btn.setAttribute('aria-label','Livello '+(i+1)+' · '+l.title);btn.style.left=anchors[i][0]+'%';btn.style.top=anchors[i][1]+'%';
+    btn.setAttribute('aria-label','Livello '+(i+1)+' · '+l.title);
+    if(i<complete)btn.classList.add('cleared');if(i%5===4)btn.classList.add('crossing');
     if(i===current){btn.classList.add('current');const pip=new Image();pip.src=outfitFrame(1,0);pip.alt='Pip';btn.append(pip)}
     btn.onclick=()=>enter(i);$('trail').append(btn);
   });
-  requestAnimationFrame(()=>{if($('scrollMap').hidden)return;const map=$('scrollMap');map.scrollTop=$('trail').children[current].offsetTop-map.clientHeight*.63});
+  Voyage.map();requestAnimationFrame(()=>{if($('scrollMap').hidden)return;const map=$('scrollMap');const stops=$('trail').querySelectorAll('.stop'),offset=i=>stops[i].offsetTop-map.clientHeight*.63;map.scrollTop=offset(journeyFrom??current);if(journeyFrom!==null){journeyFrom=null;map.scrollTo({top:offset(current),behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'})}});
 }
 function shop(){
   $('roomTitle').textContent='Gemme del viaggio · '+balance();
   for(const coat of coats){
     const has=owned.includes(coat.id);const card=document.createElement('button');card.className='friendCard skin '+coat.id;
-    card.disabled=coat.id===look||(!has&&balance()<coat.price);card.innerHTML='<img src="assets/walk10.webp" alt=""><span><strong>'+coat.name+'</strong><small>'+(coat.id===look?'In uso':has?'Indossa':coat.price+' gemme · Sblocca')+'</small></span>';
-    card.style.setProperty('--portrait','url(assets/portrait-'+coat.id+'.webp)');card.style.setProperty('--tag','url(assets/tag-'+coat.id+'.webp)');
+    card.disabled=coat.id===look||(!has&&balance()<coat.price);card.innerHTML='<img src="assets/'+(coat.id==='classic'?'walk':coat.id)+'10.webp" alt=""><span><strong>'+coat.name+'</strong><small>'+(coat.id===look?'In uso':has?'Indossa':coat.price+' gemme · Sblocca')+'</small></span>';
     card.setAttribute('aria-label',coat.name+' · '+(coat.id===look?'in uso':has?'indossa':coat.price+' gemme'));
     card.onclick=()=>{if(!has){if(balance()<coat.price)return;owned.push(coat.id)}look=coat.id;document.body.dataset.look=look;save();tab('shop')};$('roomContent').append(card);
   }
@@ -243,7 +252,7 @@ function friendCards(container,inLevel,refresh){
   for(const [id,f] of Object.entries(friends).sort((a,b)=>a[1].at-b[1].at)){
     const locked=f.at>complete,card=document.createElement('button');card.className='friendCard';card.disabled=locked||(inLevel&&powerUsed);
     card.setAttribute('aria-pressed',String(id===equipped));card.innerHTML='<img src="assets/'+id+'.webp" alt=""><span><strong>'+f.name+(locked?' 🔒':id===equipped?' ✓':'')+'</strong><small>'+(locked?'Da salvare al livello '+f.at:f.ability+' · '+f.description)+'</small></span>';
-    if(!inLevel){card.classList.add('portraitCard');card.style.backgroundImage='url(assets/card-'+id+'.webp)';card.dataset.status=locked?'🔒 '+f.at:id===equipped?'✓':'';card.setAttribute('aria-label',f.name+' · '+(locked?'bloccato fino al livello '+f.at:f.description))}
+    if(!inLevel){card.classList.add('portraitCard');card.dataset.status=locked?'🔒 '+f.at:id===equipped?'✓':'';card.setAttribute('aria-label',f.name+' · '+(locked?'bloccato fino al livello '+f.at:f.description))}
     card.onclick=()=>{if(!inLevel){dialog(f.name);$('panelBody').textContent=f.ability+' · '+f.description;action(id===equipped?'In squadra':'Scegli',()=>{equipped=id;save();closePanel();refresh()});action('Chiudi',closePanel);return}equipped=id;save();if(inLevel)render();refresh()};container.append(card);
   }
 }
@@ -256,7 +265,9 @@ function abilityActions(inLevel){
 }
 $('album').onclick=()=>tab('mochi');$('homeTab').onclick=()=>tab('home');$('shopTab').onclick=()=>tab('shop');$('support').onclick=()=>{if(phase==='ready'){breaking=false;collection(true)}};
 $('leave').onclick=()=>{if(phase==='ended'||phase==='lost'){home();return}if(phase!=='ready')return;dialog('Abbandonare il livello?');$('panelBody').textContent='Tornerai al viaggio. Gli amici già salvati resteranno con te.';action('Continua a giocare',closePanel);action('Esci',()=>{closePanel();home()})};
-$('again').onclick=()=>phase==='ended'?home():reset();$('restart').onclick=reset;
+$('again').onclick=()=>phase==='ended'?home():reset();$('restart').onclick=()=>{if(phase!=='ready')return;dialog('Ricominciare il livello?');$('panelBody').textContent='Ripartirai dalla prima mossa.';action('Continua',closePanel);action('Riprova',()=>{closePanel();reset()})};
+new ResizeObserver(()=>{if(!$('scrollMap').hidden&&!$('home').hidden)Voyage.map()}).observe($('trail'));
+new ResizeObserver(()=>{if(!$('stage').hidden)Voyage.stage()}).observe($('stage'));
 new ResizeObserver(()=>{if(!$('stage').hidden&&Number.isInteger(position)){stand(position);if(guestPosition!=null)placeGuest(guestPosition)}}).observe($('board'));
 function handleBack(){
   if($('panel').open){closePanel();return true}
