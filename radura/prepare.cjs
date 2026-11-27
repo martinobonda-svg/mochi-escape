@@ -10,3 +10,7 @@ for(const name of ['blue','pink','green','yellow','purple'])store(name,materials
 for(const name of ['forestGate','forestSign','creamButton'])store(name,objects[name]);
 for(const [id,key] of [['mochi','coniglio'],['luma','gufo']])store(id,actor[key]);
 store('journey',read(source,'landscapes').staircase);
+const scenery=read(source,'landscapes');
+for(const k of ['snowScene','starsScene','snowFrame','starsFrame'])store(k,scenery[k]);
+for(const k of ['snowGate','starsGate','iceTile','rockTile','starTile'])store(k,objects[k]);
+store('neve',actor.ermellino);store('bruma',actor.walk50);
