@@ -306,6 +306,11 @@ canvas[data-style="3"]{filter:saturate(.58) brightness(1.14)!important}
 #playScreen .tray{margin-bottom:max(7dvh,env(safe-area-inset-bottom))}
 #playScreen[data-gate=snow] .portal-swirl{background:conic-gradient(transparent,#73fffa,transparent,#efffff,transparent)}
 #playScreen[data-gate=stars] .portal-swirl{background:conic-gradient(transparent,#d9a3ff,transparent,#fff4ff,transparent)}
+@media(max-height:670px){
+  #playScreen[data-theme=forest]{gap:4px}
+  #playScreen[data-theme=forest] .board-wrap{width:min(84vw,45dvh);margin-top:5px}
+  #playScreen .tray{margin-bottom:max(2dvh,env(safe-area-inset-bottom))}
+}
 </style>
 <main id="playScreen"><div class="brand"><button class="corner left" id="levels" aria-label="Home">⌂</button><h1 id="logoFallback" hidden>Mochi Escape</h1><img id="gameLogo" hidden alt=""><div id="stageBanner"></div><button class="corner right" id="help" aria-label="Impostazioni e istruzioni">⚙</button></div><header><span id="moves" class="badge"></span><span id="liveStars" hidden></span><i id="progressBar" hidden></i><span id="level" hidden></span></header><div class="board-wrap"><div id="board"></div></div><div id="status" role="status" hidden></div><div id="supportBar" hidden><button id="supportAction"></button></div><div class="tray" id="tray"></div><div id="stageName"></div><div hidden><button id="returnHome">Torna al viaggio</button><button id="restart">Riprova</button><button id="hint">Suggerimento</button></div></main><section id="garden" class="garden"><div class="gardenBrand"><img id="gardenLogo" alt="MOCHI ESCAPE"><h1 id="gardenTitle">MOCHI ESCAPE</h1></div><div id="starCounter" aria-label="Stelle dei portali"></div><div id="trailmap" class="trailmap" tabindex="0" aria-label="Sentiero dei portali"></div><div id="homeAction" hidden><button id="continueGame">Gioca</button></div><div id="shopPanel" class="lobbyPanel" hidden></div><div id="mochiPanel" class="lobbyPanel" hidden></div>
 <nav class="gardenNav" aria-label="Menu principale"><button id="shopNav"><span aria-hidden="true">🏪</span>Negozio</button><button id="mapNav"><span aria-hidden="true">🏠</span>Home</button><button id="collectionNav"><span aria-hidden="true">🐰</span>Mochi</button></nav></section><div id="overlay" hidden><div class="modal"><div id="modalArt"></div><h2 id="title"></h2><p id="desc"></p><div id="extra"></div><button id="ok">Continua</button></div></div><div id="ghost" hidden></div>
@@ -316,7 +321,7 @@ const $=id=>document.getElementById(id),grid=$('board'),tray=$('tray');
 const routeSources=[0,1,2,3,4,10,11,12,13,19,20,21,23,26,29];
 const LEVELS=routeSources.map(index=>LEVEL_ARCHIVE[index]);
 const milestones=[4,9,14];
-const routeAnchors=[[37,93.2],[62,85.4],[34,80.1],[62,74],[49,63.8],[37,52],[62,46.5],[33,41.1],[41,31.8],[40.5,23.7],[54,17.9],[60,15.2],[36,11.9],[51,9.75],[50,7.8]];
+const routeAnchors=[[37,93.2],[62,85.4],[34,80.1],[62,74],[49,63.8],[37,52],[62,46.5],[33,41.1],[41,31.8],[40.5,23.7],[54,17.9],[60,15.2],[36,11.9],[47,9.75],[54,7.8]];
 let ASSETS=/*__ART_BUNDLE__*/{};const artURL=k=>ASSETS[k]?'data:image/webp;base64,'+ASSETS[k]:'';
 function mochiCharacter(pose='',variant=0) {
   return `<svg class="mochi-rig ${pose}" viewBox="0 0 100 100" aria-hidden="true" focusable="false" data-variant="${variant}">
@@ -578,5 +583,6 @@ reset();applyArt();goGarden();try{if(!localStorage.getItem('mochi-story-intro-v1
 if(!Object.keys(ASSETS).length)fetch('art/sprites.json').then(r=>r.ok?r.json():Promise.reject()).then(a=>{ASSETS=a;applyArt()}).catch(()=>{});
 /*__PIP_RENDERER__*/
 </script></html>
+
 
 
