@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/android.yml'
-      - 'index.html'
+      - 'radura/**'
       - 'art/**'
 permissions:
   contents: write
@@ -32,30 +32,15 @@ jobs:
           BT="$SDK/build-tools/35.0.0"
           JAR="$SDK/platforms/android-35/android.jar"
           mkdir -p build/assets build/classes build/dex build/res/drawable
-          python3 - <<'PY'
-          import base64, json, pathlib
-          src = pathlib.Path('index.html').read_text()
-          art = json.loads(pathlib.Path('art/sprites.json').read_text())
-          art['journeyBackdrop'] = pathlib.Path('art/journey.b64').read_text().strip()
-          art.update(json.loads(pathlib.Path('art/staircase.json').read_text()))
-          art['travelFilm'] = pathlib.Path('art/pip-travel.b64').read_text().strip()
-          art.update(json.loads(pathlib.Path('art/storybook.json').read_text()))
-          for sheet in ('actors-hd','landscapes'):
-              art.update(json.loads(pathlib.Path('art/'+sheet+'.json').read_text()))
-          for unused in ('journeyBackdrop','forestPlate','forestBackdrop'):
-              art.pop(unused, None)
-          src = src.replace('/*__PIP_RENDERER__*/',pathlib.Path('art/pip-runtime.js').read_text(encoding='utf-8-sig'),1)
-          assert '/*__ART_BUNDLE__*/{}' in src
-          src = src.replace('/*__ART_BUNDLE__*/{}',json.dumps(art,separators=(',',':')),1)
-          pathlib.Path('build/assets/index.html').write_text(src)
-          pathlib.Path('build/res/drawable-nodpi').mkdir(parents=True,exist_ok=True)
-          pathlib.Path('build/res/drawable-nodpi/app_icon.png').write_bytes(base64.b64decode(json.loads(pathlib.Path('art/launcher.json').read_text())['png'],validate=True))
-          PY
+          node radura/prepare.cjs art build/assets/assets
+          cp radura/index.html radura/stage.js radura/puzzle.js radura/stage.css build/assets/
+          mkdir -p build/res/drawable-nodpi
+          python3 -c "import base64,json,pathlib; pathlib.Path('build/res/drawable-nodpi/app_icon.png').write_bytes(base64.b64decode(json.loads(pathlib.Path('art/launcher.json').read_text())['png']))"
           cat > build/AndroidManifest.xml <<'EOF'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.mochiescape.puzzle" android:versionCode="21" android:versionName="1.5.0">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.mochiescape.radura" android:versionCode="1" android:versionName="0.1.0">
             <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="35"/>
             <uses-permission android:name="android.permission.VIBRATE"/>
-            <application android:label="MOCHI ESCAPE" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:icon="@drawable/app_icon" android:roundIcon="@drawable/app_icon">
+            <application android:label="Mochi · La radura" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:icon="@drawable/app_icon" android:roundIcon="@drawable/app_icon">
               <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
                 <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
               </activity>
@@ -63,7 +48,7 @@ jobs:
           </manifest>
           EOF
           cat > build/MainActivity.java <<'EOF'
-          package com.mochiescape.puzzle;
+          package com.mochiescape.radura;
           import android.app.Activity;
           import android.os.Bundle;
           import android.webkit.WebView;
@@ -90,7 +75,7 @@ jobs:
           EOF
           node -e 'const fs=require("fs"),vm=require("vm"); const h=fs.readFileSync("build/assets/index.html","utf8"); for(const x of h.matchAll(/<script>([\s\S]*?)<\/script>/g)) new vm.Script(x[1]);'
           javac -source 8 -target 8 -classpath "$JAR" -d build/classes build/MainActivity.java
-          "$BT/d8" --lib "$JAR" --min-api 23 --output build/dex build/classes/com/mochiescape/puzzle/MainActivity.class
+          "$BT/d8" --lib "$JAR" --min-api 23 --output build/dex build/classes/com/mochiescape/radura/MainActivity.class
           "$BT/aapt2" compile --dir build/res -o build/resources.zip
           "$BT/aapt2" link -I "$JAR" --manifest build/AndroidManifest.xml -A build/assets -o build/unsigned.apk build/resources.zip
           (cd build/dex && zip -j ../unsigned.apk classes.dex)
@@ -106,20 +91,21 @@ jobs:
           export KS_PASS="$(python3 -c 'import json, os; print(json.loads(os.environ["SIGNING_CONFIG"])["password"])')"
           echo "::add-mask::$KS_PASS"
           unset SIGNING_CONFIG
-          "$BT/apksigner" sign --ks build/signing.p12 --ks-key-alias game-release --ks-pass env:KS_PASS --key-pass env:KS_PASS --out build/MOCHI-ESCAPE-VV-1.5.0.apk build/aligned.apk
+          "$BT/apksigner" sign --ks build/signing.p12 --ks-key-alias game-release --ks-pass env:KS_PASS --key-pass env:KS_PASS --out build/MOCHI-RADURA-0.1.0.apk build/aligned.apk
           unset KS_PASS
-          "$BT/apksigner" verify --verbose --print-certs build/MOCHI-ESCAPE-VV-1.5.0.apk | tee build/cert-check.txt
+          "$BT/apksigner" verify --verbose --print-certs build/MOCHI-RADURA-0.1.0.apk | tee build/cert-check.txt
           grep -Fqi 'certificate SHA-256 digest: 1664981479dbabd55fd7801fc1251d4c17d09eee20dd32176896f3910b7016a7' build/cert-check.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: MOCHI-ESCAPE-Android-VV-1.5.0
-          path: build/MOCHI-ESCAPE-VV-1.5.0.apk
+          name: MOCHI-ESCAPE-Android-VV-0.1.0
+          path: build/MOCHI-RADURA-0.1.0.apk
       - name: Publish direct APK for testing
-        if: github.ref == 'refs/heads/codex/mochi-1.5.0'
+        if: github.ref == 'refs/heads/codex/radura-0.1.0'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "android-1.5.0-${{ github.run_id }}" "build/MOCHI-ESCAPE-VV-1.5.0.apk" --title "MOCHI-ESCAPE 1.5.0 Android test" --notes "Illustrated visual update. Persistent signing certificate checked. Not a Google Play release." --prerelease
+          gh release create "radura-0.1.0-${{ github.run_id }}" "build/MOCHI-RADURA-0.1.0.apk" --title "MOCHI-ESCAPE 0.1.0 Android test" --notes "Illustrated visual update. Persistent signing certificate checked. Not a Google Play release." --prerelease
+
 
 
 
