@@ -8,3 +8,5 @@ const actor=read(source,'actors-hd'),materials=read(source,'staircase'),objects=
 for(const [key,data] of Object.entries(actor))if(/^walk[0-4][0-3]$/.test(key))store(key,data);
 for(const name of ['blue','pink','green','yellow','purple'])store(name,materials[name]);
 for(const name of ['forestGate','forestSign','creamButton'])store(name,objects[name]);
+for(const [id,key] of [['mochi','coniglio'],['luma','gufo']])store(id,actor[key]);
+store('journey',read(source,'landscapes').staircase);
