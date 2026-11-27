@@ -311,6 +311,47 @@ canvas[data-style="3"]{filter:saturate(.58) brightness(1.14)!important}
   #playScreen[data-theme=forest] .board-wrap{width:min(84vw,45dvh);margin-top:5px}
   #playScreen .tray{margin-bottom:max(2dvh,env(safe-area-inset-bottom))}
 }
+
+/* The terrain shelf lies at 65% of each authored scene. Keep the bottom
+   of the frame at that elevation while fitting the puzzle to the handset. */
+#playScreen[data-theme]{--board-side:min(80vw,39dvh,530px);--frame-foot:.14;position:relative;height:100dvh;min-height:0;padding:0;gap:0;overflow:hidden;isolation:isolate;background:var(--forestSceneArt) center/100% 100% no-repeat}
+#playScreen[data-theme=snow]{background-image:var(--snowSceneArt);--frame-foot:.19}
+#playScreen[data-theme=stars]{background-image:var(--starsSceneArt);--frame-foot:.19}
+#playScreen[data-theme]::before,#playScreen[data-theme]::after{display:none}
+#playScreen[data-theme] .brand{position:absolute;top:max(1.2dvh,env(safe-area-inset-top));left:3%;width:94%;max-width:none;height:auto}
+#playScreen[data-theme=forest] #stageBanner{width:90%;justify-self:center;font-size:clamp(13px,4.4vw,26px);min-height:26px}
+#playScreen[data-theme=forest] #gameLogo{height:clamp(32px,6.6dvh,65px)}
+#playScreen[data-theme] header{position:absolute;top:max(12.7dvh,72px);left:50%;transform:translateX(-50%);z-index:2}
+#playScreen[data-theme=forest] header{top:max(14dvh,83px)}
+#playScreen[data-theme] #moves{white-space:nowrap;font-size:clamp(11px,2.7vw,16px)}
+#playScreen[data-theme] .board-wrap{position:absolute;bottom:calc(35dvh + var(--board-side)*var(--frame-foot));left:0;right:0;width:var(--board-side);margin:0 auto;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}
+#playScreen[data-theme] .board-wrap::before{content:'';position:absolute;z-index:-1;left:-7%;right:-8%;bottom:calc(-1 * var(--board-side)*var(--frame-foot));height:5%;border-radius:50%;background:radial-gradient(ellipse,#24233699,transparent 72%);pointer-events:none}
+#playScreen[data-theme] .board-wrap::after{content:'';position:absolute;z-index:1;pointer-events:none;inset:-12.5%;background:var(--forestFrame) center/100% 100% no-repeat}
+#playScreen[data-theme=snow] .board-wrap::after,#playScreen[data-theme=stars] .board-wrap::after{inset:-15% -15% -22%;background-image:var(--snowFrame)}
+#playScreen[data-theme=stars] .board-wrap::after{background-image:var(--starsFrame)}
+#playScreen[data-theme] #board{border:0;padding:1px;border-radius:7px;box-shadow:none}
+#playScreen[data-theme] .tray{position:absolute;left:0;right:0;bottom:max(7dvh,env(safe-area-inset-bottom));margin:0 auto;width:min(91vw,550px);background:linear-gradient(155deg,#f9e9cd,#cda377);box-shadow:inset 0 1px #fff6df,0 3px #805d48,0 7px 10px #271e373a}
+#playScreen[data-theme=snow] .tray{border-top:4px solid #f6f9ff;background:linear-gradient(150deg,#e2e6ee,#bab2b8)}
+#playScreen[data-theme=stars] .tray{border-color:#dcccf0;background:linear-gradient(150deg,#d5bfdc,#a58eb7)}
+#playScreen[data-theme] #supportBar{position:absolute;top:69dvh;left:5%;right:5%;margin:0;z-index:2}
+#playScreen[data-theme] .hero{filter:none}
+#playScreen[data-theme] .hero .pip-model{width:110%;height:110%;position:absolute;bottom:-2%;left:-5%;filter:none;image-rendering:auto}
+#playScreen .hero::before,.journey-pip::before{content:'';position:absolute;bottom:4%;left:26%;width:48%;height:12%;border-radius:50%;background:radial-gradient(ellipse,#3426218a 8%,#3629323b 50%,transparent 73%);pointer-events:none}
+#garden .journey-pip{left:-10%;bottom:12%;width:clamp(64px,19vw,108px);filter:none}
+#garden .journey-pip[data-biome=snow] .journey-film{filter:brightness(1.04) saturate(.94)}
+#garden .journey-pip[data-biome=stars] .journey-film{filter:hue-rotate(-7deg) brightness(.96)}
+#garden #trailmap button.journey-stop:is(.next,.lit,.milestone,:disabled),#garden #trailmap button.journey-stop{background:none;border:0;outline:0;box-shadow:none;filter:none;align-content:center}
+#garden #trailmap button.journey-stop small{position:static;transform:none;display:grid;place-items:center;margin:auto;width:1.55em;height:1.55em;padding:0;border-radius:50%;font:bold clamp(14px,4vw,20px) Georgia;color:#fff4da!important;background:linear-gradient(#827783,#554f61);border:1px solid #d2bed1;box-shadow:0 2px 1px #372b4270;text-shadow:none}
+#garden #trailmap button.journey-stop.lit small,#garden #trailmap button.journey-stop.next small{background:linear-gradient(#fff1a7,#e5a44b);color:#633915!important;border-color:#fff1b1;box-shadow:0 2px #83562e,0 0 8px #ffe69c}
+#garden #trailmap .stop-star{display:none}
+@media(max-height:650px){#playScreen[data-theme]{--board-side:min(77vw,37dvh)}#playScreen[data-theme] .tray{bottom:max(4dvh,env(safe-area-inset-bottom))}#playScreen[data-theme] #supportBar{top:68dvh}#playScreen[data-theme] .piece{height:9dvh}}
+#garden #trailmap button.journey-stop:disabled:not(.lit),#garden #trailmap button.journey-stop:disabled.milestone{background:none;box-shadow:none;border:none;filter:none}
+#garden #trailmap button.journey-stop{transform:translate(-50%,-50%) scale(var(--stop-size))}
+#garden #trailmap .journey-stop.next small{translate:80% 0}
+#garden #trailmap .journey-pip{left:50%;bottom:36%}
+#playScreen[data-theme]{background-size:cover;background-position:50% 65%}
+#garden[data-tab=home] #trailmap{overflow-x:hidden}
+#garden[data-tab=home] #journeyScene{width:max(100%,76.667dvh);left:50%;transform:translateX(-50%)}
 </style>
 <main id="playScreen"><div class="brand"><button class="corner left" id="levels" aria-label="Home">⌂</button><h1 id="logoFallback" hidden>Mochi Escape</h1><img id="gameLogo" hidden alt=""><div id="stageBanner"></div><button class="corner right" id="help" aria-label="Impostazioni e istruzioni">⚙</button></div><header><span id="moves" class="badge"></span><span id="liveStars" hidden></span><i id="progressBar" hidden></i><span id="level" hidden></span></header><div class="board-wrap"><div id="board"></div></div><div id="status" role="status" hidden></div><div id="supportBar" hidden><button id="supportAction"></button></div><div class="tray" id="tray"></div><div id="stageName"></div><div hidden><button id="returnHome">Torna al viaggio</button><button id="restart">Riprova</button><button id="hint">Suggerimento</button></div></main><section id="garden" class="garden"><div class="gardenBrand"><img id="gardenLogo" alt="MOCHI ESCAPE"><h1 id="gardenTitle">MOCHI ESCAPE</h1></div><div id="starCounter" aria-label="Stelle dei portali"></div><div id="trailmap" class="trailmap" tabindex="0" aria-label="Sentiero dei portali"></div><div id="homeAction" hidden><button id="continueGame">Gioca</button></div><div id="shopPanel" class="lobbyPanel" hidden></div><div id="mochiPanel" class="lobbyPanel" hidden></div>
 <nav class="gardenNav" aria-label="Menu principale"><button id="shopNav"><span aria-hidden="true">🏪</span>Negozio</button><button id="mapNav"><span aria-hidden="true">🏠</span>Home</button><button id="collectionNav"><span aria-hidden="true">🐰</span>Mochi</button></nav></section><div id="overlay" hidden><div class="modal"><div id="modalArt"></div><h2 id="title"></h2><p id="desc"></p><div id="extra"></div><button id="ok">Continua</button></div></div><div id="ghost" hidden></div>
@@ -321,7 +362,7 @@ const $=id=>document.getElementById(id),grid=$('board'),tray=$('tray');
 const routeSources=[0,1,2,3,4,10,11,12,13,19,20,21,23,26,29];
 const LEVELS=routeSources.map(index=>LEVEL_ARCHIVE[index]);
 const milestones=[4,9,14];
-const routeAnchors=[[37,93.2],[62,85.4],[34,80.1],[62,74],[49,63.8],[37,52],[62,46.5],[33,41.1],[41,31.8],[40.5,23.7],[54,17.9],[60,15.2],[36,11.9],[47,9.75],[54,7.8]];
+const routeAnchors=[[30,94.9],[57,82.2],[78,75.9],[46,66.8],[57,53.4],[38,42.4],[62,36.8],[53.8,32.5],[33,29.25],[41,26.45],[48.8,19.65],[42.5,17.6],[55.3,14.85],[68.2,12.7],[56.3,10.6]];
 let ASSETS=/*__ART_BUNDLE__*/{};const artURL=k=>ASSETS[k]?'data:image/webp;base64,'+ASSETS[k]:'';
 function mochiCharacter(pose='',variant=0) {
   return `<svg class="mochi-rig ${pose}" viewBox="0 0 100 100" aria-hidden="true" focusable="false" data-variant="${variant}">
@@ -451,7 +492,7 @@ function drawTrail(){
     button.disabled=i>unlocked;
     button.style.setProperty('--stop-x',anchors[i][0]+'%');
     button.style.setProperty('--stop-y',anchors[i][1]+'%');
-    button.style.setProperty('--stop-size',(active?1:complete?.84:.75));
+    button.style.setProperty('--stop-size',String(1-i*.012));
     button.setAttribute('aria-label','Livello '+(i+1)+(complete?' completato':active?' disponibile':' bloccato'));
     button.innerHTML='<span class="stop-star" aria-hidden="true">★</span><small>'+(i+1)+'</small>';
     button.onclick=()=>goPlay(i);
@@ -460,7 +501,7 @@ function drawTrail(){
   const previous=travelFrom;
   travelFrom=null;
   const actor=document.createElement('span');
-  actor.className='journey-pip';
+  actor.className='journey-pip';actor.dataset.biome=WORLDS[Math.floor(unlocked/5)].theme;
   actor.innerHTML=pipArt();
   function center(i,behavior){
     const el=markers[i];
@@ -481,7 +522,7 @@ function drawTrail(){
       if(!reduced && ASSETS.travelFilm){
         const film=document.createElement('video');
         film.muted=true;film.playsInline=true;
-        film.setAttribute('aria-hidden','true');
+        film.setAttribute('aria-hidden','true');film.className='journey-film';
         film.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none';
         film.style.transform=actor.dataset.heading==='5'?'scaleX(-1)':'';
         film.src='data:video/webm;base64,'+ASSETS.travelFilm;
@@ -583,6 +624,8 @@ reset();applyArt();goGarden();try{if(!localStorage.getItem('mochi-story-intro-v1
 if(!Object.keys(ASSETS).length)fetch('art/sprites.json').then(r=>r.ok?r.json():Promise.reject()).then(a=>{ASSETS=a;applyArt()}).catch(()=>{});
 /*__PIP_RENDERER__*/
 </script></html>
+
+
 
 
 
