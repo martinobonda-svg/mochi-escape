@@ -19,7 +19,16 @@ let complete=0,equipped=null,owned=['classic'],look='classic',lastMove=null,brea
 const coats=[{id:'classic',name:'Pip',price:0},{id:'honey',name:'Miele',price:2},{id:'moon',name:'Lunare',price:4}];
 function balance(){return complete-coats.reduce((sum,c)=>sum+(owned.includes(c.id)?c.price:0),0)}
 
-try{const data=JSON.parse(localStorage.getItem(saveKey)||'{}');complete=Math.max(0,Math.min(15,parseInt(data.complete)||0));owned=coats.filter(c=>!c.price||data.owned?.includes(c.id)).map(c=>c.id);look=owned.includes(data.look)?data.look:'classic';if(friends[data.friend]?.at<=complete)equipped=data.friend}catch{}
+try{const current=localStorage.getItem(saveKey);let data;
+if(current){data=JSON.parse(current)}else{
+  const previous=JSON.parse(localStorage.getItem('mochi-staircase-v1')||'null');
+  if(previous){data={complete:Math.max(Number(previous.unlocked)||0,previous.stars?.[14]>0?15:0)}}
+  else {
+    const old=Number(localStorage.getItem('mochi-level-v1'))||0;
+    const end=localStorage.getItem('mochi-complete-v03')==='1'?30:old===19&&localStorage.getItem('mochi-complete-v02')==='1'?20:old;
+    data={complete:[0,1,2,3,4,10,11,12,13,19,20,21,23,26,29].filter(i=>i<end).length};
+  }
+}complete=Math.max(0,Math.min(15,parseInt(data.complete)||0));owned=coats.filter(c=>!c.price||data.owned?.includes(c.id)).map(c=>c.id);look=owned.includes(data.look)?data.look:'classic';if(friends[data.friend]?.at<=complete)equipped=data.friend}catch{}
 function save(){try{localStorage.setItem(saveKey,JSON.stringify({complete,friend:equipped,owned,look}))}catch{}}
 let index=0,bonus=0,powerUsed=false,guestPosition=null;
 const guest=document.createElement('img');guest.className='friend';guest.hidden=true;
@@ -31,7 +40,15 @@ for(let i=0;i<36;i++){
   cell.onclick=()=>play(i);cells.push(cell);$('board').append(cell);
 }
 $('board').append(guest,hero);
-function orient(angle,frame,mirror=false){hero.src=sprites.get(angle*4+frame).src;hero.style.setProperty('--turn',mirror?-1:1)}
+const outfitCache=new Map();
+function outfitFrame(angle,frame){
+  if(look==='classic')return sprites.get(angle*4+frame).src;
+  if(!outfitCache.has(look)){
+    const images=[];for(let a=0;a<4;a++)for(let f=0;f<4;f++){const im=new Image();im.src='assets/'+look+a+f+'.webp';images.push(im)}outfitCache.set(look,images);
+  }
+  return outfitCache.get(look)[Math.min(3,angle)*4+frame].src;
+}
+function orient(angle,frame,mirror=false){hero.src=outfitFrame(angle,frame);hero.style.setProperty('--turn',mirror?-1:1)}
 function stand(i){
   const cell=cells[i];position=i;hero.style.width=cell.offsetWidth*1.09+'px';
   hero.style.setProperty('--x',cell.offsetLeft-cell.offsetWidth*.045+'px');hero.style.setProperty('--y',cell.offsetTop-cell.offsetWidth*.06+'px');
@@ -90,7 +107,7 @@ function render(){
   });
   buttons.forEach((b,i)=>{b.disabled=spent.has(i)||phase!=='ready';b.setAttribute('aria-pressed',String(i===chosen))});
   $('counter').textContent='Livello '+(index+1)+' · '+(6+bonus-moves)+' mosse';
-  $('support').innerHTML=equipped?'<img src="assets/'+equipped+'.webp" alt="'+friends[equipped].name+'">':'♧';
+  $('support').dataset.active=equipped?'yes':'no';$('support').innerHTML=equipped?'<img src="assets/'+equipped+'.webp" alt="'+friends[equipped].name+'">':'♧';
   $('support').disabled=phase!=='ready';
   $('leave').disabled=phase==='moving'||phase==='walking';
 
@@ -196,7 +213,7 @@ function tab(name){
   Radura.levels.forEach((l,i)=>{
     const btn=document.createElement('button');btn.className='stop';btn.textContent=i+1;btn.disabled=i>complete;
     btn.setAttribute('aria-label','Livello '+(i+1)+' · '+l.title);btn.style.left=anchors[i][0]+'%';btn.style.top=anchors[i][1]+'%';
-    if(i===current){btn.classList.add('current');const pip=new Image();pip.src='assets/walk10.webp';pip.alt='Pip';btn.append(pip)}
+    if(i===current){btn.classList.add('current');const pip=new Image();pip.src=outfitFrame(1,0);pip.alt='Pip';btn.append(pip)}
     btn.onclick=()=>enter(i);$('trail').append(btn);
   });
   requestAnimationFrame(()=>{if($('scrollMap').hidden)return;const map=$('scrollMap');map.scrollTop=$('trail').children[current].offsetTop-map.clientHeight*.63});
@@ -206,9 +223,11 @@ function shop(){
   for(const coat of coats){
     const has=owned.includes(coat.id);const card=document.createElement('button');card.className='friendCard skin '+coat.id;
     card.disabled=coat.id===look||(!has&&balance()<coat.price);card.innerHTML='<img src="assets/walk10.webp" alt=""><span><strong>'+coat.name+'</strong><small>'+(coat.id===look?'In uso':has?'Indossa':coat.price+' gemme · Sblocca')+'</small></span>';
+    card.style.setProperty('--portrait','url(assets/portrait-'+coat.id+'.webp)');card.style.setProperty('--tag','url(assets/tag-'+coat.id+'.webp)');
+    card.setAttribute('aria-label',coat.name+' · '+(coat.id===look?'in uso':has?'indossa':coat.price+' gemme'));
     card.onclick=()=>{if(!has){if(balance()<coat.price)return;owned.push(coat.id)}look=coat.id;document.body.dataset.look=look;save();tab('shop')};$('roomContent').append(card);
   }
-  const text=document.createElement('p');text.textContent='Ottieni una gemma la prima volta che completi ogni livello.';$('roomContent').append(text);
+  $('roomTitle').title='Una gemma per ogni nuovo livello completato.';
 }
 function dialog(title){
   $('panelTitle').textContent=title;$('panelBody').replaceChildren();$('panelActions').replaceChildren();if(!$('panel').open)$('panel').showModal();
@@ -224,7 +243,8 @@ function friendCards(container,inLevel,refresh){
   for(const [id,f] of Object.entries(friends).sort((a,b)=>a[1].at-b[1].at)){
     const locked=f.at>complete,card=document.createElement('button');card.className='friendCard';card.disabled=locked||(inLevel&&powerUsed);
     card.setAttribute('aria-pressed',String(id===equipped));card.innerHTML='<img src="assets/'+id+'.webp" alt=""><span><strong>'+f.name+(locked?' 🔒':id===equipped?' ✓':'')+'</strong><small>'+(locked?'Da salvare al livello '+f.at:f.ability+' · '+f.description)+'</small></span>';
-    card.onclick=()=>{equipped=id;save();if(inLevel)render();refresh()};container.append(card);
+    if(!inLevel){card.classList.add('portraitCard');card.style.backgroundImage='url(assets/card-'+id+'.webp)';card.dataset.status=locked?'🔒 '+f.at:id===equipped?'✓':'';card.setAttribute('aria-label',f.name+' · '+(locked?'bloccato fino al livello '+f.at:f.description))}
+    card.onclick=()=>{if(!inLevel){dialog(f.name);$('panelBody').textContent=f.ability+' · '+f.description;action(id===equipped?'In squadra':'Scegli',()=>{equipped=id;save();closePanel();refresh()});action('Chiudi',closePanel);return}equipped=id;save();if(inLevel)render();refresh()};container.append(card);
   }
 }
 function abilityActions(inLevel){

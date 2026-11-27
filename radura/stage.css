@@ -38,3 +38,28 @@ dialog{width:min(88vw,390px);max-height:83dvh;overflow:auto;border:2px solid #b8
 #stage[data-biome=snow] .piece .unit{background-image:url(assets/iceTile.webp)!important}
 #stage[data-biome=stars] .piece .unit{background-image:url(assets/starTile.webp)!important}
 @media(prefers-reduced-motion:reduce){#pip.walking,.friend{transition:none}}
+/* Furniture is painted separately from the card and button sprites. */
+#home[data-tab=mochi]{background:url(assets/albumInterior.webp) center/100% 100% no-repeat}
+#home[data-tab=shop]{background:url(assets/shopInterior.webp) center/100% 100% no-repeat}
+#home:is([data-tab=mochi],[data-tab=shop]) h1{left:10.8%;width:81.7%;height:8.1%;top:4.5%;font-size:0;background:url(assets/albumTitle.webp) center/100% 100% no-repeat}
+#home[data-tab=shop] h1{background-image:url(assets/shopTitle.webp)}
+#home:is([data-tab=mochi],[data-tab=shop]) #room{inset:0;max-height:none;align-self:stretch;overflow:visible;background:none;box-shadow:none;padding:0;border:0;pointer-events:none}
+#roomContent button{pointer-events:auto}
+#home[data-tab=mochi] #roomTitle{position:absolute;left:20%;right:20%;top:33.1%;color:#705234;font-size:clamp(12px,3.3vw,18px)}
+#home[data-tab=mochi] #roomContent{position:absolute;left:8%;right:8.5%;top:37.1%;bottom:29.3%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:1.2dvh 3%}
+#home[data-tab=mochi] .portraitCard{position:relative;display:block;background-size:100% 100%;background-position:center;background-repeat:no-repeat;min-height:0;padding:0;margin:0;border:0;border-radius:17%;width:100%;height:100%;overflow:hidden}
+.portraitCard img,.portraitCard span{display:none}.portraitCard:disabled{filter:saturate(.46)}.portraitCard[data-status]:not([data-status=""])::after{content:attr(data-status);position:absolute;right:5%;top:5%;background:#fff1cfdd;color:#4b3322;border-radius:1em;font-size:14px;padding:3px 6px}
+#home[data-tab=shop] #roomTitle{position:absolute;left:18%;right:18%;top:26.7%;height:4%;display:flex;align-items:center;justify-content:center;margin:0;padding-left:7%;font-size:clamp(13px,3.8vw,24px);background:url(assets/gemIcon.webp) 6% center/auto 76% no-repeat,linear-gradient(#fff8de,#edc58e);border:2px solid #dca05a;border-radius:16px}
+#home[data-tab=shop] #roomContent{position:absolute;left:7.7%;right:6%;top:33.2%;bottom:22.6%;display:grid;grid-template-rows:repeat(3,1fr);gap:1.6%}
+#home[data-tab=shop] .skin{display:grid;align-content:center;grid-template-columns:52% 1fr;gap:4%;position:relative;min-height:0;padding:0;margin:0;background:none;box-shadow:none;border:0;outline:none;color:#4f3426}
+#home[data-tab=shop] .skin::before{content:'';height:100%;position:absolute;left:0;top:0;width:52%;background:var(--portrait) center/100% 100%;border-radius:16%}
+#home[data-tab=shop] .skin img{visibility:hidden}.skin span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6dvh;height:100%}
+#home[data-tab=shop] .skin strong{background:var(--tag) center/100% 100%;font-size:0;width:100%;height:4.5dvh;border-radius:20%}.skin small{background:linear-gradient(#ffdc80,#eead46);border:2px solid #fff1bb;border-radius:1em;padding:.2em .55em;font-size:clamp(12px,3.2vw,18px);color:#56361f;text-align:center}
+#tabs{left:3%;right:3%;bottom:max(3.6%,env(safe-area-inset-bottom));align-items:center}
+#tabs button,#tabs #album{width:100%;height:clamp(58px,9.5dvh,100px);padding:0;background:url(assets/tabHome.webp) center/100% 100% no-repeat;border:0;border-radius:25%;font-size:0;box-shadow:none}
+#tabs #shopTab{background-image:url(assets/tabShop.webp)}#tabs #album{background-image:url(assets/tabFriends.webp)}
+#tabs button[aria-current=page]{text-decoration:none;filter:none}#tabs #album[aria-current=page]{background-image:url(assets/tabFriendsOn.webp)}#tabs #shopTab[aria-current=page]{background-image:url(assets/tabShopOn.webp)}#tabs #homeTab[aria-current=page]{filter:sepia(.7) saturate(2.1)}
+#actions button,#actions #hint,#actions #restart,#actions #leave{display:flex;align-items:flex-end;justify-content:center;padding:0 0 13%;padding-bottom:clamp(7px,1.2dvh,12px);background:url(assets/hintKey.webp) center/100% 100% no-repeat;border:0;box-shadow:none}
+#actions #restart{background-image:url(assets/retryKey.webp)}#actions #leave{background-image:url(assets/exitKey.webp)}#actions b{display:none}
+#stage #support[data-active=no]{font-size:0;border:0;box-shadow:none;background:url(assets/friendKey.webp) center/contain no-repeat}
+body[data-look] #pip,body[data-look] .current img{filter:none}

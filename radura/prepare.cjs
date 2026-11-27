@@ -14,3 +14,4 @@ const scenery=read(source,'landscapes');
 for(const k of ['snowScene','starsScene','snowFrame','starsFrame'])store(k,scenery[k]);
 for(const k of ['snowGate','starsGate','iceTile','rockTile','starTile'])store(k,objects[k]);
 store('neve',actor.ermellino);store('bruma',actor.walk50);
+for(const [key,image] of Object.entries(read(__dirname,'menu-art')))store(key,image);
