@@ -46,27 +46,9 @@ const Voyage=(()=>{
    }
    return svg;
  }
- function map(){
-   const host=document.getElementById('trail'),w=host.clientWidth,h=host.clientHeight;
-   if(!w||!h)return;
-   host.querySelector('.geography')?.remove();const layer=document.createElement('div');layer.className='geography';host.prepend(layer);
-   const stops=Array.from(host.querySelectorAll('.stop'));const coords=stops.map((_,i)=>point(i,w,h));
-   const bounds=[h,(coords[4].y+coords[5].y)/2,(coords[9].y+coords[10].y)/2,0];
-   for(let j=0;j<3;j++){
-     const zone=document.createElement('div');zone.className='zone';zone.style.top=bounds[j+1]+'px';zone.style.height=(bounds[j]-bounds[j+1])+'px';layer.append(zone);
-     landscape(zone,w,bounds[j]-bounds[j+1],j,j+2);
-     const label=document.createElement('span');label.className='region';label.textContent=worldNames[j];zone.append(label);
-   }
-   const svg=node(layer,'svg',{class:'road',viewBox:'0 0 '+w+' '+h,'aria-hidden':true});
-   const step=(h-192)/14;let d='';
-   coords.forEach((a,i)=>{stops[i].style.left=a.x+'px';stops[i].style.top=a.y+'px';if(i===0){d='M '+a.x+' '+a.y;return}const b=coords[i-1];d+=' C '+b.x+' '+(b.y-step*.48)+' '+a.x+' '+(a.y+step*.48)+' '+a.x+' '+a.y});
-   for(const [stroke,width,offset] of [['#384e5260',39,5],['#ac8564',34,2],['#e8cda0',31,0],['#fff1cb',22,-1]]){
-     node(svg,'path',{d,transform:'translate(0 '+offset+')',fill:'none',stroke,'stroke-width':width,'stroke-linecap':'round',...(width===22?{'stroke-dasharray':'2 10'}:{})});
-   }
- }
  function stage(){
    const host=document.getElementById('scene'),el=host.parentElement,w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;
    host.replaceChildren();landscape(host,w,h,['forest','snow','stars'].indexOf(el.dataset.biome),27);
  }
- return {map,stage};
+ return {stage};
 })();
