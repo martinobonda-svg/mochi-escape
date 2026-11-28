@@ -116,7 +116,7 @@ function render(){
 
 }
 function reset(){
-  sequence++;endDrag();lastMove=null;breaking=false;bonus=0;powerUsed=false;guestPosition=level().friendCell??null;
+  sequence++;endDrag();cells.forEach(c=>c.classList.remove('arriving'));lastMove=null;breaking=false;bonus=0;powerUsed=false;guestPosition=level().friendCell??null;
   hero.classList.remove('enterPortal');guest.classList.remove('enterPortal');
   guest.hidden=!level().friend;if(level().friend){guest.src='assets/'+level().friend+'.webp';guest.alt=friends[level().friend].name;placeGuest(guestPosition)}
   $('stageTitle').textContent=level().title;
@@ -137,6 +137,7 @@ async function play(i){
   for(const k of Radura.fit(board,chosen,i)){delete cells[k].dataset.visual;cells[k].dataset.tile=1;paintTile(cells[k],[1,2,4][chosen])}
   Feedback.play(result.clear.size?'clear':'place');
   if(!matchMedia('(prefers-reduced-motion:reduce)').matches){for(const k of Radura.fit(board,chosen,i))if(!result.clear.has(k))cells[k].animate([{transform:'scale(.82)'},{transform:'scale(1.04)',offset:.65},{transform:'scale(1)'}],{duration:200})}
+  StoryArt.clear(cells,result.clear);
   board=result.next;
   for(const k of result.clear){cells[k].animate([{opacity:1},{opacity:.1}],{duration:180})}
   if(result.clear.size)await pause(160);if(sequence!==serial)return;
@@ -166,7 +167,7 @@ async function resolveMove(serial){
       orient(Math.min(facing,8-facing),frame,facing>4);await pause(65);if(sequence!==serial)return;
     }
   }
-  hero.classList.add('enterPortal');
+  cells[level().exit].classList.add('arriving');hero.classList.add('enterPortal');
   if(together){placeGuest(level().exit);await pause(250);if(sequence!==serial)return;guest.classList.add('enterPortal')}
   await pause(350);if(sequence!==serial)return;
   const earned=complete===index;if(earned)journeyFrom=index;complete=Math.max(complete,index+1);save();
@@ -228,7 +229,7 @@ function tab(name){
     if(i===current){btn.classList.add('current');const pip=new Image();pip.src=outfitFrame(1,0);pip.alt='Pip';btn.append(pip)}
     btn.onclick=()=>enter(i);$('trail').append(btn);
   });
-  Archipelago.map();requestAnimationFrame(()=>{if($('scrollMap').hidden)return;const map=$('scrollMap');const stops=$('trail').querySelectorAll('.stop'),offset=i=>stops[i].offsetTop-map.clientHeight*.63;map.scrollTop=offset(journeyFrom??current);if(journeyFrom!==null){journeyFrom=null;map.scrollTo({top:offset(current),behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'})}});
+  Archipelago.map();requestAnimationFrame(()=>{if($('scrollMap').hidden)return;const map=$('scrollMap');const stops=$('trail').querySelectorAll('.stop'),offset=i=>stops[i].offsetTop-map.clientHeight*.63;map.scrollTop=offset(journeyFrom??current);if(journeyFrom!==null){Archipelago.advance(stops[journeyFrom],stops[current],outfitFrame);journeyFrom=null;map.scrollTo({top:offset(current),behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'})}});
 }
 function shop(){
   $('roomTitle').textContent='Gemme del viaggio · '+balance();

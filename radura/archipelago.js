@@ -24,6 +24,12 @@ const Archipelago=(()=>{
     path(g,'M-77-6Q-60-18-42-15Q-25-23-9-19Q-24-15-32-12Q-59-12-70-4Z',c[0]);
     if(biome<2){tree(g,-52,-8,.72,biome===1);if(i%2===0)tree(g,53,-6,.51,biome===1)}
     else{for(const [x,y,s] of [[-52,-7,.85],[54,-5,.55],[-42,-9,.45]]){const t=el(g,'g',{transform:'translate('+x+' '+y+') scale('+s+')'});path(t,'M-9-15L-2-36 8-23 6-3-3 1Z','#b094ea');path(t,'M-2-36L1-15-3 1-9-15Z','#e2ceff')}}
+    if(biome<2&&i%3!==1){
+      const falls=el(g,'g',{transform:'translate('+((i%2?1:-1)*35)+' 10)'});
+      path(falls,'M-5-2Q0 0 5-2L3 32Q1 48-2 59Q1 32-5 15Z','url(#cascade)');
+      path(falls,'M-2 1Q2 21 0 42','none',{stroke:'#fcffff','stroke-width':1.3,'stroke-dasharray':'7 9',class:'cascade-flow'});
+    }
+    if(biome===0){for(let k=0;k<7;k++){const x=(k<4?-1:1)*(30+(k*13)%37),y=2+(k*7)%6;oval(g,x,y,2.5,1.5,k%2?'#fff0c5':'#edb9b0')}}
     if(i%5===4){const portal=el(g,'g',{transform:'translate(0 -8)'});
       path(portal,'M-21 4V-14A21 23 0 0 1 21-14V4Z','url(#doorLight)');
       path(portal,'M-26 5V-15A26 28 0 0 1 26-15V5','none',{stroke:c[4],'stroke-width':8});
@@ -40,12 +46,15 @@ const Archipelago=(()=>{
     for(const [offset,color] of [[0,'#363459'],[.23,'#7e79ad'],[.42,'#b7cce2'],[.56,'#d5e3ef'],[.72,'#ecdcb4'],[1,'#96cbb1']])el(sky,'stop',{offset,'stop-color':color});
     for(const [offset,color] of [[0,'#fffacb'],[.6,'#f9cbef'],[1,'#9379be']])el(light,'stop',{offset,'stop-color':color});
     el(svg,'rect',{width:w,height:h,fill:'url(#journeySky)'});
+    const water=el(defs,'linearGradient',{id:'cascade',x2:'0%',y2:'100%'});
+    for(const [offset,opacity] of [[0,.94],[.55,.62],[1,0]])el(water,'stop',{offset,'stop-color':'#c6f4f7','stop-opacity':opacity});
+    const distance=el(svg,'g',{});
     const moon=el(svg,'g',{transform:'translate('+w*.19+' '+h*.062+') rotate(-17)'});
     path(moon,'M8-22A23 23 0 1 0 22 9Q-4 12 8-22Z','#ffedcc');
     // Small distant outcrops give the staircase a backdrop at a second depth.
     for(let k=0;k<18;k++){
       const y=h*(.035+k*.054),x=w*(k%2?.95:.06),c=colors[y<h*.34?2:y<h*.66?1:0];
-      const distant=el(svg,'g',{opacity:.36,transform:'translate('+x+' '+y+') scale('+(w/480*(.43+(k%3)*.12))+')'});
+      const distant=el(distance,'g',{opacity:.36,transform:'translate('+x+' '+y+') scale('+(w/480*(.43+(k%3)*.12))+')'});
       path(distant,'M-69 0Q-42-8-28-4L-12-26 0-10 14-19 27-5Q51-10 73-1L57 9 31 12 14 35-2 21-20 29-39 11-58 8Z',c[4]);
       path(distant,'M-69 0Q-44-8-27-4L-12-26 0-10 14-19 27-5Q52-10 73-1Q42 7 19 4Q-13 11-69 0Z',c[1]);
     }
@@ -58,9 +67,25 @@ const Archipelago=(()=>{
         const step=el(svg,'g',{transform:'translate('+x+' '+y+')'});path(step,'M-15-3L9-5 16-2 15 2-10 5-16 2Z','#96817c');path(step,'M-16-3L-10-6 11-7 16-4 11-1-12 1Z','#eddec5');path(step,'M-12 1L11-1 15-3','none',{stroke:'#fff1d4','stroke-width':1})}}
       const g=el(svg,'g',{});island(g,i);groups.push({g,a,btn:stops[i]})}
     drawPerspective=()=>{const height=scroll.clientHeight,top=scroll.scrollTop;if(!height)return;
+      distance.setAttribute('transform','translate(0 '+((top-(h-height)/2)*.072)+')');
       for(const {g,a,btn} of groups){const depth=Math.max(0,Math.min(1,(a.y-top)/height)),scale=(.66+.50*depth)*Math.min(1.45,w/360);
         g.setAttribute('transform','translate('+a.x+' '+a.y+') scale('+scale+')');btn.style.setProperty('--depth',.82+depth*.25)}};
     scroll.onscroll=schedule;drawPerspective();
   }
-  return {map};
+  function advance(from,to,frameFor){
+    const fox=to.querySelector('img');if(!fox||from===to||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+    const scale=Number(to.style.getPropertyValue('--depth'))||1;
+    const dx=(from.offsetLeft-to.offsetLeft)/scale,dy=(from.offsetTop-to.offsetTop)/scale;
+    const frames=Array.from({length:13},(_,i)=>{const t=i/12,curve=t*t*(3-2*t);return {transform:'translate('+dx*(1-curve)+'px,'+(dy*(1-t)-(i%2?4:0))+'px) rotate('+(i%2?-2:0)+'deg)'}});
+    const portrait=fox.src,heading=Math.abs(dx)>Math.abs(dy)*.36?3:4;
+    const track=fox.animate(frames,{duration:820,easing:'ease-in-out'});
+    function stride(){
+      if(!fox.isConnected||track.playState==='finished'||track.playState==='idle'){fox.src=portrait;fox.style.scale='';return}
+      const gait=Math.floor((track.currentTime||0)/78)%4;
+      const src=frameFor(heading,gait);if(fox.src!==src)fox.src=src;
+      fox.style.scale=dx>0?'-1 1':'1';requestAnimationFrame(stride);
+    }
+    stride();
+  }
+  return {map,advance};
 })();

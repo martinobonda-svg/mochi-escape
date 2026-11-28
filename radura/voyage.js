@@ -48,7 +48,8 @@ const Voyage=(()=>{
  }
  function stage(){
    const host=document.getElementById('scene'),el=host.parentElement,w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;
-   host.replaceChildren();landscape(host,w,h,['forest','snow','stars'].indexOf(el.dataset.biome),27);
+   host.replaceChildren();const world=['forest','snow','stars'].indexOf(el.dataset.biome);
+   StoryArt.scene(landscape(host,w,h,world,27),w,h,world);
  }
  return {stage};
 })();
