@@ -128,8 +128,12 @@ async function play(i){
   if(breaking){
     const targets=powerTargets(equipped,board,i);
     if(!targets.length)return;
-    breaking=false;powerUsed=true;const serial=sequence;phase='moving';board=board.slice();
-    for(const target of targets)board[target]=0;
+    const nextBoard=board.slice();for(const target of targets)nextBoard[target]=0;
+    if(moves===0&&Radura.path(nextBoard).length){breaking=false;$('message').textContent='Questo aiuto aprirebbe il portale. Gioca prima un pezzo.';return}
+    breaking=false;powerUsed=true;const serial=sequence;phase='moving';render();
+    await CompanionMagic.cast(equipped,targets.map(k=>cells[k]));if(serial!==sequence)return;
+    board=nextBoard;
+
     Feedback.play('clear');StoryArt.clear(cells,targets);render();await resolveMove(serial);return;
   }
   const result=Radura.move(board,chosen,i);
@@ -148,7 +152,7 @@ async function play(i){
 }
 async function resolveMove(serial){
   const route=Radura.path(board);
-  if(!route.length){
+  if(moves===0||!route.length){
     if(moves>=6+bonus||!buttons.some((_,j)=>!spent.has(j)&&board.some((_,k)=>Radura.fit(board,j,k)))){
       Feedback.play('lost');phase='lost';$('leave').disabled=false;$('again').textContent='Riprova';$('pieces').hidden=true;$('again').hidden=false;$('hint').hidden=true;$('restart').hidden=true;$('message').textContent='La strada è ancora chiusa.';dialog('Sentiero chiuso');$('panelBody').textContent=moves>=6+bonus?'Hai esaurito le mosse.':'Nessun pezzo disponibile entra nel tavoliere.';action('Al viaggio',()=>{closePanel();home()});action('Riprova',()=>{closePanel();reset()});
     }else{phase='ready';render();$('message').textContent=''}
@@ -238,6 +242,7 @@ function shop(){
   Wardrobe.show($('roomContent'),$('roomTitle'),{look,hat,neck},outfit=>{({look,hat,neck}=outfit);document.body.dataset.look=look;save()});
 }
 function dialog(title){
+  $('panel').classList.remove('friendFolio');
   $('panelTitle').textContent=title;$('panelBody').replaceChildren();$('panelActions').replaceChildren();if(!$('panel').open)$('panel').showModal();
 }
 function action(label,fn){const btn=document.createElement('button');btn.className='wood';btn.textContent=label;btn.onclick=fn;$('panelActions').append(btn)}
@@ -262,11 +267,17 @@ function friendCards(container,inLevel,refresh){
     card.onclick=()=>{
       if(inLevel){equipped=id;save();render();refresh();return}
       dialog(f.name);
+      $('panel').classList.add('friendFolio');
       const portrait=new Image();portrait.src='assets/'+id+'.webp';portrait.alt='';
-      const ability=document.createElement('p');ability.textContent=f.ability+' · '+f.description;
-      $('panelBody').append(portrait,ability);
-      if(locked){const note=document.createElement('p');note.textContent='Raggiungi il portale con '+f.name+' al livello '+f.at+' per averlo in squadra.';$('panelBody').append(note)}
-      else if(id!==equipped)action('In squadra con Runa',()=>{equipped=id;save();closePanel();refresh()});
+      const plate=document.createElement('div');plate.className='folioPortrait';plate.append(portrait);
+      const ability=document.createElement('section');ability.className='folioAbility';
+      const abilityName=document.createElement('strong');abilityName.textContent=f.ability;
+      const abilityText=document.createElement('p');abilityText.textContent=f.description;
+      const state=document.createElement('p');state.className='folioStatus';
+      state.textContent=locked?'Da salvare al livello '+f.at:id===equipped?'In squadra con Runa':'Amico salvato';
+      ability.append(abilityName,abilityText,state);
+      $('panelBody').append(plate,ability);
+      if(!locked&&id!==equipped)action('In squadra con Runa',()=>{equipped=id;save();closePanel();refresh()});
       action('Chiudi',closePanel);
     };
     list.append(card);
@@ -293,12 +304,14 @@ function abilityActions(inLevel){
   const f=friends[equipped];
   const detail=document.createElement('p');detail.textContent=usable?f.description:equipped==='riccio'?'Disponibile sui tavolieri con radici.':'Disponibile dopo aver posato un pezzo.';$('panelBody').append(detail);
   if(!usable)return;
-  action('Usa '+f.ability,()=>{
+  action('Usa '+f.ability,async()=>{
     if(phase!=='ready'||powerUsed)return;
     if(['bruma','talpa','riccio'].includes(equipped)){
       breaking=true;closePanel();$('message').textContent=equipped==='riccio'?'Tocca una riga con radici.':equipped==='talpa'?'Tocca il primo blocco della galleria.':'Tocca il blocco da spezzare.';return;
     }
-    powerUsed=true;
+    powerUsed=true;const serial=sequence;const id=equipped;phase='moving';closePanel();render();
+    const target=id==='neve'?cells[level().start]:['luma','lontra'].includes(id)?buttons[0]:id==='lumi'?cells[position]:$('counter');
+    await CompanionMagic.cast(id,['luma','lontra'].includes(id)?buttons:[target]);if(serial!==sequence)return;phase='ready';
     if(['mochi','lumi','lontra'].includes(equipped))bonus++;
     if(['luma','lontra'].includes(equipped))spent.clear();
     if(equipped==='neve'){board=lastMove.board;spent=lastMove.spent;moves=lastMove.moves;chosen=lastMove.chosen;lastMove=null}

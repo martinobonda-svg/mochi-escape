@@ -23,3 +23,24 @@
 
 #pieces{position:relative}#pieces>.edge-weather{min-width:0}
 #chapter{top:calc(env(safe-area-inset-top,0px) + clamp(51px,10vmin,65px))}.cell[data-tile="7"],.cell[data-tile="8"]{background:linear-gradient(130deg,#ffffff99 12%,transparent 13% 30%,#e1f6ffa6 31%,transparent 49%),linear-gradient(145deg,#afdcf2,#86b6ce 78%)}
+/* Native scrolling keeps each numbered stone registered to its painted island. */
+#mapVista{display:none;pointer-events:none;position:absolute;inset:0 0 50px;background:#b3bcad;overflow:hidden}
+#home[data-tab=home] #mapVista{display:block}
+.atlas-sky{position:absolute;inset:0;opacity:0;background:linear-gradient(165deg,var(--sky),var(--ground));}
+.atlas-sky::before{content:"";position:absolute;inset:0 0 5%;background:var(--land) center 20% / cover no-repeat;mask-image:linear-gradient(#000 0%,#000d 48%,#0006 75%,transparent 100%)}
+.atlas-sky.meadow{--land:url(islands/horizon-0.webp);--sky:#f1ce9f;--ground:#b5cc9a;opacity:1}
+.atlas-sky.glacier{--land:url(islands/horizon-1.webp);--sky:#d8c9e0;--ground:#adc8d5}
+.atlas-sky.cosmos{--land:url(islands/horizon-2.webp);--sky:#68608e;--ground:#a39bb9}
+.atlas-mist{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 64%,#fff3d322,transparent 62%),linear-gradient(0deg,#374c4615,transparent 13%,transparent 80%,#3d344021)}
+#home[data-tab=home] #scrollMap,#home[data-tab=home] #trail{background:transparent}
+.map-band{position:absolute;left:0;pointer-events:none;overflow:visible}
+#trail .stop{z-index:1;font-family:Georgia,serif;text-shadow:0 1px #fff9da;font-size:clamp(17px,5.4vmin,25px);background:radial-gradient(at 38% 24%,#fff7cb,#eccc8a 65%,#ce9c61);box-shadow:inset 0 0 0 2px #ffebc0,0 3px #7d5f44,0 6px 8px #4d463c3b}
+#trail .stop:disabled{background:linear-gradient(145deg,#ece7cf,#c9c7af 62%,#aaa791);color:#68695b;border-color:#94917d;box-shadow:inset 0 0 0 1.5px #eee9cf,0 3px #898672}
+#trail .stop.current{outline-color:#ffedac}
+#home[data-tab=home]>h1{border-color:#9c764a;box-shadow:inset 0 0 0 2px #fff0c8,0 3px #8d6643,0 6px 14px #3e493f46;background:radial-gradient(at 44% 20%,#fff2c9,transparent 61%),linear-gradient(110deg,#d3a974,#f7ddac 50%,#dab483)}
+.atlas-sky::before{inset:0 0 auto;height:min(80%,max(85vw,310px));background-position:center 44%;mask-image:linear-gradient(#000 0%,#000 44%,#000b 70%,transparent 100%)}
+.atlas-sky::after{content:"";position:absolute;inset:auto -3% -2%;height:34%;background:var(--land) center 80%/cover no-repeat;opacity:.37;mask-image:linear-gradient(transparent,#0009 55%,#000)}
+#home[data-tab=home]{--sign-width:min(65vw,288px);--sign-height:calc(var(--sign-width)*.25)}
+#home[data-tab=home]>h1{width:var(--sign-width);height:var(--sign-height);padding:0;margin:5px 0 0;border:0;box-shadow:none;background:transparent url(islands/runa-sign.webp) center / contain no-repeat;font-size:0;text-shadow:none;filter:drop-shadow(0 2px 2px #44352740)}
+#home[data-tab=home]>h1::before,#home[data-tab=home]>h1::after{display:none}
+#home[data-tab=home] #chapter{top:calc(env(safe-area-inset-top,0px) + var(--sign-height) + 6px)}
