@@ -219,11 +219,12 @@ function home(){
 }
 function tab(name){
   $('home').dataset.tab=name;$('scrollMap').hidden=name!=='home';$('room').hidden=name==='home';
-  const title=name==='home'?'Mochi Escape':name==='mochi'?'Gli amici di Runa':'Il negozio';
+  const title=name==='home'?'Mochi Escape':name==='mochi'?'Gli amici di Runa':name==='shop'?'Il bazar del viaggio':'La sartoria di Runa';
   $('home').querySelector('h1').textContent=title;
-  for(const [id,t] of [['album','mochi'],['shopTab','shop'],['homeTab','home']])$(id).setAttribute('aria-current',t===name?'page':'false');
+  for(const [id,t] of [['album','mochi'],['shopTab','shop'],['tailorTab','tailor'],['homeTab','home']])$(id).setAttribute('aria-current',t===name?'page':'false');
   $('roomContent').replaceChildren();
-  if(name==='shop'){shop();return}
+  if(name==='tailor'){tailor();return}
+  if(name==='shop'){emporium();return}
   if(name==='mochi'){
     $('roomTitle').textContent=Object.values(friends).filter(f=>f.at<=complete).length+' di '+Object.keys(friends).length+' amici salvati';
     friendCards($('roomContent'),false,()=>tab('mochi'));return;
@@ -238,7 +239,13 @@ function tab(name){
   });
   Archipelago.map();requestAnimationFrame(()=>{if($('scrollMap').hidden)return;const map=$('scrollMap');const stops=$('trail').querySelectorAll('.stop'),offset=i=>stops[i].offsetTop-map.clientHeight*.63;map.scrollTop=offset(journeyFrom??current);if(journeyFrom!==null){Archipelago.advance(stops[journeyFrom],stops[current],outfitFrame);journeyFrom=null;map.scrollTo({top:offset(current),behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'})}});
 }
-function shop(){
+function emporium(){
+  $('roomTitle').textContent='Il bazar del viaggio';
+  const scene=document.createElement('article');scene.className='emporium';
+  scene.innerHTML='<div class="emporium-note"><h3>Apertura prossima</h3><p>Qui arriveranno gli articoli da acquistare. Puoi già provare tutti i costumi in sartoria.</p><button class="wood" type="button">Apri la sartoria</button></div>';
+  scene.querySelector('button').onclick=()=>tab('tailor');$('roomContent').append(scene);
+}
+function tailor(){
   Wardrobe.show($('roomContent'),$('roomTitle'),{look,hat,neck},outfit=>{({look,hat,neck}=outfit);document.body.dataset.look=look;save()});
 }
 function dialog(title){
@@ -319,7 +326,7 @@ function abilityActions(inLevel){
     if(equipped==='lumi')$('hint').click();
   });
 }
-$('album').onclick=()=>tab('mochi');$('homeTab').onclick=()=>tab('home');$('shopTab').onclick=()=>tab('shop');$('support').onclick=()=>{if(phase==='ready'){breaking=false;collection(true)}};
+$('album').onclick=()=>tab('mochi');$('homeTab').onclick=()=>tab('home');$('tailorTab').onclick=()=>tab('tailor');$('shopTab').onclick=()=>tab('shop');$('support').onclick=()=>{if(phase==='ready'){breaking=false;collection(true)}};
 $('leave').onclick=()=>{if(phase==='ended'||phase==='lost'){home();return}if(phase!=='ready')return;dialog('Abbandonare il livello?');$('panelBody').textContent='Tornerai al viaggio. Gli amici già salvati resteranno con te.';action('Continua a giocare',closePanel);action('Esci',()=>{closePanel();home()})};
 $('again').onclick=()=>phase==='ended'?home():reset();$('restart').onclick=()=>{if(phase!=='ready')return;dialog('Ricominciare il livello?');$('panelBody').textContent='Ripartirai dalla prima mossa.';action('Continua',closePanel);action('Riprova',()=>{closePanel();reset()})};
 new ResizeObserver(()=>{if(!$('scrollMap').hidden&&!$('home').hidden)Archipelago.map()}).observe($('trail'));

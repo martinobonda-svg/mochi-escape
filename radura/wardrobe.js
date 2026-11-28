@@ -1,6 +1,6 @@
 'use strict';
 const Wardrobe=(()=>{
-  const coats=[['classic','Runa'],['honey','Miele'],['moon','Lunare'],['copper','Postina di Rame'],['silver','Guardiana dei ghiacci'],['umber','Cercaghiande'],['dawn','Giardiniera'],['aurora','Cartografa Aurora']];
+  const coats=[['classic','Runa'],['honey','Custode del miele'],['moon','Falena lunare'],['copper','Aviatrice di Rame'],['silver','Cavaliere di brina'],['umber','Cercaghiande'],['dawn','Rosa selvatica'],['aurora','Cartografa Aurora']];
   const hats=[['none','Orecchie libere'],['beret','Basco di mora'],['wool','Berretto di neve'],['leaf','Foglia del bosco'],['crown','Corona di stelle'],['flower','Fiore di prato']];
   const necks=[['none','Collo libero'],['lagoon','Foulard laguna'],['rose','Sciarpa corallo'],['knit','Sciarpa di lana'],['star','Spilla stellare'],['clover','Spilla trifoglio']];
   const cache=new Map();
@@ -13,17 +13,20 @@ const Wardrobe=(()=>{
   // The collar's attachment lies at the top of the bodice. Keep its pivot under
   // the jaw as relative widths change between the frontal and rear views.
   function anchor(outfit,angle){
-    const original=['classic','honey','moon'].includes(outfit.look);
-    const nx=original?[.57,.65,.70,.59,.5]:[.57,.64,.69,.64,.5];
-    const seam=original?[.49,.49,.48,.49,.48]:[.50,.49,.48,.48,.48];
     const row=TAILOR[outfit.look],lo=Math.floor(angle),hi=Math.ceil(angle),t=angle-lo;
-    const bodyW=inter(row[lo].w/row[lo].h,row[hi].w/row[hi].h,t)*76;
-    const center=inter(nx[lo],nx[hi],t),x=51-center*bodyW;
-    return {x,y:16,w:bodyW,h:76,neckX:51,neckY:16+inter(seam[lo],seam[hi],t)*76};
+    const moon=outfit.look==='moon';
+    // Neck pivots are registered to the illustrated head, independently of wings and tail.
+    const centers=moon?[.5,.58,.68,.59,.5]:[.62,.68,.73,.61,.50];
+    const seams={classic:.414,moon:.39,copper:.33,aurora:.375,honey:.39,silver:.40,umber:.385,dawn:.392};
+    const fraction=inter(centers[lo],centers[hi],t);
+    const natural=inter(row[lo].w/row[lo].h,row[hi].w/row[hi].h,t);
+    const h=Math.min(87,90/(natural*Math.max(fraction,1-fraction)*2));
+    const w=h*natural,y=95-h;
+    return {x:51-fraction*w,y,w,h,neckX:51,neckY:y+h*seams[outfit.look]};
   }
   function frame(outfit,angle,gait){
     const token=[outfit.look,outfit.hat,outfit.neck,angle,gait].join('-');if(cache.has(token))return cache.get(token);
-    const views=TAILOR[outfit.look],r=views[angle],a=anchor(outfit,angle),tilt=[0,-.8,.1,.9][gait];
+    const views=TAILOR[outfit.look],r=views[Math.round(angle)],a=anchor(outfit,angle),tilt=[0,-.8,.1,.9][gait];
     const itemView=angle<.75?0:angle<1.75?1:angle<2.75?2:3;
     let adorn='';
     if(outfit.neck!=='none'){
@@ -44,11 +47,12 @@ const Wardrobe=(()=>{
       const width=clip?(itemView>=2?6.9:12):outfit.hat==='wool'?27:30;
       const height=clip?11:outfit.hat==='wool'?24:17;
       const cx=a.neckX+(clip?[-10,-9,-5,-1,8][Math.round(angle)]:-1.1);
-      const base=clip?32:outfit.hat==='crown'?26:28;
+      const base=a.y+a.h*(clip?.19:outfit.hat==='crown'?.12:.15);
       adorn+=image(piece,cx-width/2,base-height,width,height);
     }
     const y=a.neckY,x=a.neckX;
-    const body=r.norm?image(r,0,0,100,100):image(r,a.x,a.y,a.w,a.h);
+    const turn=Number.isInteger(angle)?0:(angle<2?2:-2);
+    const body='<g transform="translate('+a.neckX+' 0) skewY('+turn+') translate('+(-a.neckX)+' 0)">'+image(r,a.x,a.y,a.w,a.h)+'</g>';
     // A four-phase foot cycle uses the actual illustrated boots instead of
     // translating the entire portrait. Face and garments share a body pivot.
     const leg=[0,1.3,0,-1.3][gait],lift=[0,-.5,0,-.65][gait];
@@ -56,10 +60,10 @@ const Wardrobe=(()=>{
     const legs='<g transform="translate('+(-leg*.65)+' '+Math.min(0,-leg)+')"><use xlink:href="#body" clip-path="url(#left)"/></g><g transform="translate('+(leg*.65)+' '+Math.min(0,leg)+')"><use xlink:href="#body" clip-path="url(#right)"/></g>';
     const upper='<g transform="translate(0 '+lift+') rotate('+tilt+' 51 80)"><use xlink:href="#body" clip-path="url(#upper)"/>'+adorn+'</g>';
     const dressed=leg===0?'<use xlink:href="#body"/>'+adorn:legs+upper;
-    const src=uri('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">'+defs+dressed+'</svg>');
+    const src=uri('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="640" height="640" viewBox="0 0 100 100">'+defs+dressed+'</svg>');
     if(cache.size>=80)cache.delete(cache.keys().next().value);cache.set(token,src);return src;
   }
-  const groups=[['look','Mantelli',coats],['hat','Copricapi',hats],['neck','Sciarpe e spille',necks]];
+  const groups=[['look','Costumi',coats],['hat','Copricapi',hats],['neck','Sciarpe e spille',necks]];
   function show(root,title,outfit,change){
     title.textContent='La sartoria di Runa';root.replaceChildren();
     const home=root.closest('#home');home.querySelector('h1').textContent='La sartoria di Runa';
