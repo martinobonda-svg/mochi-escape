@@ -50,6 +50,22 @@ const Voyage=(()=>{
    const host=document.getElementById('scene'),el=host.parentElement,w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;
    host.replaceChildren();const world=['forest','snow','stars'].indexOf(el.dataset.biome);
    StoryArt.scene(landscape(host,w,h,world,27),w,h,world);
+   for(const far of [false,true]){const art=new Image();art.className='biome-scenery'+(far?' far':'');art.src='islands/isle-'+el.dataset.region+'.webp';art.alt='';host.append(art)}
+   for(const mount of [el.querySelector('.field'),el.querySelector('#pieces')]){
+     mount.querySelector('.edge-weather')?.remove();
+     const layer=document.createElement('span');layer.className='edge-weather';layer.setAttribute('aria-hidden','true');
+     for(let i=0;i<(world===2?2:6);i++){
+       const p=document.createElement('i');p.className=['edge-leaf','edge-flake','edge-comet'][world];
+       if(mount.classList.contains('field')&&el.classList.contains('irregular')){
+         const col=i%6,first=Radura.level.initial.findIndex((v,k)=>k%6===col&&v!==-1),tile=el.querySelectorAll('.cell')[first];
+         if(!tile)continue;
+         const box=tile.getBoundingClientRect(),field=mount.getBoundingClientRect();
+         p.style.left=(box.left-field.left+box.width*(i%2?.82:.14))+'px';p.style.top=(box.top-field.top-2)+'px';
+       }else p.style.setProperty('--left',(i%2?91-i*1.7:3+i*2.2)+'%');
+       p.style.setProperty('--period',(6.5+i*.55)+'s');p.style.setProperty('--lag',(-i*2.3)+'s');layer.append(p)
+     }
+     mount.append(layer)
+   }
  }
  return {stage};
 })();
