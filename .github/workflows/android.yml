@@ -46,7 +46,7 @@ jobs:
           </adaptive-icon>
           EOF
           cat > build/AndroidManifest.xml <<'EOF'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.mochiescape.puzzle" android:versionCode="28" android:versionName="0.0.8">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.mochiescape.puzzle" android:versionCode="29" android:versionName="0.0.9">
             <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="35"/>
             <uses-permission android:name="android.permission.VIBRATE"/>
             <application android:label="Mochi Escape" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:icon="@mipmap/launcher" android:roundIcon="@mipmap/launcher">
@@ -106,20 +106,20 @@ jobs:
           export KS_PASS="$(python3 -c 'import json, os; print(json.loads(os.environ["SIGNING_CONFIG"])["password"])')"
           echo "::add-mask::$KS_PASS"
           unset SIGNING_CONFIG
-          "$BT/apksigner" sign --ks build/signing.p12 --ks-key-alias game-release --ks-pass env:KS_PASS --key-pass env:KS_PASS --out build/MOCHI-ESCAPE-0.0.8.apk build/aligned.apk
+          "$BT/apksigner" sign --ks build/signing.p12 --ks-key-alias game-release --ks-pass env:KS_PASS --key-pass env:KS_PASS --out build/MOCHI-ESCAPE-0.0.9.apk build/aligned.apk
           unset KS_PASS
-          "$BT/apksigner" verify --verbose --print-certs build/MOCHI-ESCAPE-0.0.8.apk | tee build/cert-check.txt
+          "$BT/apksigner" verify --verbose --print-certs build/MOCHI-ESCAPE-0.0.9.apk | tee build/cert-check.txt
           grep -Fqi 'certificate SHA-256 digest: 1664981479dbabd55fd7801fc1251d4c17d09eee20dd32176896f3910b7016a7' build/cert-check.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: MOCHI-ESCAPE-Android-VV-0.0.8
-          path: build/MOCHI-ESCAPE-0.0.8.apk
+          name: MOCHI-ESCAPE-Android-VV-0.0.9
+          path: build/MOCHI-ESCAPE-0.0.9.apk
       - name: Publish direct APK for testing
-        if: github.ref == 'refs/heads/codex/mochi-0.0.8-update'
+        if: github.ref == 'refs/heads/codex/mochi-0.0.9-update'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "mochi-update-0.0.8-${{ github.run_id }}" "build/MOCHI-ESCAPE-0.0.8.apk" --title "MOCHI-ESCAPE 0.0.8 Android test" --notes "Illustrated visual update. Persistent signing certificate checked. Not a Google Play release." --prerelease
+          gh release create "mochi-update-0.0.9-${{ github.run_id }}" "build/MOCHI-ESCAPE-0.0.9.apk" --title "MOCHI-ESCAPE 0.0.9 Android test" --notes "Illustrated visual update. Persistent signing certificate checked. Not a Google Play release." --prerelease
 
 
 

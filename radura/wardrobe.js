@@ -14,10 +14,9 @@ const Wardrobe=(()=>{
   // the jaw as relative widths change between the frontal and rear views.
   function anchor(outfit,angle){
     const row=TAILOR[outfit.look],lo=Math.floor(angle),hi=Math.ceil(angle),t=angle-lo;
-    const moon=outfit.look==='moon';
-    // Neck pivots are registered to the illustrated head, independently of wings and tail.
-    const centers=moon?[.5,.58,.68,.59,.5]:[.62,.68,.73,.61,.50];
-    const seams={classic:.414,moon:.39,copper:.33,aurora:.375,honey:.39,silver:.40,umber:.385,dawn:.392};
+    // Midpoints of the plush head in each direction, measured on the opaque silhouette.
+    const centers={"classic":[0.573,0.569,0.566,0.569,0.507],"moon":[0.565,0.579,0.565,0.565,0.505],"honey":[0.528,0.583,0.531,0.563,0.506],"copper":[0.579,0.595,0.552,0.572,0.509],"silver":[0.55,0.553,0.567,0.563,0.517],"umber":[0.571,0.574,0.574,0.569,0.502],"dawn":[0.545,0.537,0.559,0.568,0.527],"aurora":[0.572,0.583,0.566,0.571,0.5]}[outfit.look];
+    const seams={classic:.55,moon:.55,copper:.56,aurora:.55,honey:.55,silver:.55,umber:.55,dawn:.55};
     const fraction=inter(centers[lo],centers[hi],t);
     const natural=inter(row[lo].w/row[lo].h,row[hi].w/row[hi].h,t);
     const h=Math.min(87,90/(natural*Math.max(fraction,1-fraction)*2));
@@ -33,7 +32,7 @@ const Wardrobe=(()=>{
       const brooch=['star','clover'].includes(outfit.neck),piece=TAILOR[outfit.neck][itemView];
       // A brooch is pinned to the chest and disappears naturally round the side.
       if(!brooch||angle<2.75){
-        const width=brooch?(angle>1.5?5:9):(angle>=3?24:22);
+        const width=brooch?(angle>1.5?5:9):(angle>=3?32:30);
         const height=brooch?10:outfit.neck==='knit'?10:angle>=3?8:17;
         const cx=a.neckX+(brooch?Math.sin(angle*Math.PI/4)*8:0);
         const top=a.neckY+(brooch?5:-4.4);
